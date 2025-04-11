@@ -1,0 +1,147 @@
+.consulta-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.consulta-container h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  color: #333;
+}
+
+.filtro-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filtro-data label {
+  font-weight: bold;
+}
+
+.filtro-data input[type="date"] {
+  padding: 0.4rem;
+  border: 1px solid #311b1b;
+  border-radius: 4px;
+}
+
+.filtro-data button {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.filtro-data button:hover {
+  background-color: #0056b3;
+}
+
+button.btn-voltar {
+  background-color: #6c757d;
+}
+
+button.btn-voltar:hover {
+  background-color: #5a6268;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  box-shadow: 0 2px 5px rgba(252, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+thead {
+  background-color: #0056b3;
+  color: white;
+}
+
+.efectlist tr:nth-child(even) {
+  background-color: #8a8989;
+}
+
+.efectlist tr:hover {
+  background-color: #ffffff;
+}
+
+tr, td {
+  color: #000000;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+th {
+  padding: 0.75rem;
+  text-align: center;
+  border: 1px solid #000000;
+}
+
+label {
+  font-weight: bold;
+  text-align: center;
+  color: #000000;
+}
+
+.data-seletor2 input {
+  padding: 6px 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.data-seletor2 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .filtro-data {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .filtro-data button,
+  .filtro-data input[type="date"] {
+    width: 100%;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .consulta-container {
+    padding: 1rem;
+  }
+
+  .consulta-container h2 {
+    font-size: 1.5rem;
+  }
+
+  table {
+    font-size: 0.8rem;
+  }
+
+  th, td {
+    padding: 0.3rem;
+  }
+}
+
+  
