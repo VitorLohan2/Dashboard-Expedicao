@@ -1,36 +1,26 @@
-// src/Dashboard.jsx
+// src/components/Dashboard.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 👈 IMPORTANTE
+import { useNavigate } from 'react-router-dom';
 import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
 import '../App.css';
 
-const App = () => {
-  const navigate = useNavigate(); // 👈 Para navegar para a rota de consulta
-
+const Dashboard = () => {
+  // Declare todas as variáveis de estado primeiro
+  const navigate = useNavigate();
+  
+  // Estados para datas e listagem
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const hoje = new Date();
-    return hoje.toISOString().split('T')[0];
+    return new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
 
   const [plates, setPlates] = useState([
     { placa: "TM24R22", modelo: "0001", codigoBarra: "TM24R22-045", status: "Não iniciado" },
-    { placa: "XYZ9Z87", modelo: "0002", codigoBarra: "XYZ9Z87-123", status: "Não iniciado" },
-    { placa: "QWE2R34", modelo: "0003", codigoBarra: "QWE2R34-078", status: "Não iniciado" },
-    { placa: "QWE2R35", modelo: "0003", codigoBarra: "QWE2R35-078", status: "Não iniciado" },
-    { placa: "QWE2R36", modelo: "0003", codigoBarra: "QWE2R36-078", status: "Não iniciado" },
-    { placa: "QWE2R37", modelo: "0003", codigoBarra: "QWE2R37-078", status: "Não iniciado" },
-    { placa: "QWE2R38", modelo: "0003", codigoBarra: "QWE2R38-078", status: "Não iniciado" },
-    { placa: "QWE2R39", modelo: "0003", codigoBarra: "QWE2R39-078", status: "Não iniciado" },
-    { placa: "QWE2R40", modelo: "0003", codigoBarra: "QWE2R40-078", status: "Não iniciado" },
-    { placa: "QWE2R41", modelo: "0003", codigoBarra: "QWE2R41-078", status: "Não iniciado" },
-    { placa: "QWE2R42", modelo: "0003", codigoBarra: "QWE2R42-078", status: "Não iniciado" },
-    { placa: "QWE2R43", modelo: "0003", codigoBarra: "QWE2R43-078", status: "Não iniciado" },
-    { placa: "QWE2R44", modelo: "0003", codigoBarra: "QWE2R44-078", status: "Não iniciado" },
-    { placa: "QWE2R45", modelo: "0003", codigoBarra: "QWE2R45-078", status: "Não iniciado" },
-    { placa: "QWE2R47", modelo: "0003", codigoBarra: "QWE2R47-078", status: "Não iniciado" },
+    { placa: "TM24R23", modelo: "0002", codigoBarra: "TM24R23-045", status: "Não iniciado" }
+    // ... (seus dados existentes)
   ]);
 
   const [selectedPlate, setSelectedPlate] = useState(null);
@@ -39,6 +29,7 @@ const App = () => {
   const [tempo, setTempo] = useState('00:00:00');
   const [timerInterval, setTimerInterval] = useState(null);
 
+  // Funções auxiliares
   const formatarTempo = (segundos) => {
     const h = String(Math.floor(segundos / 3600)).padStart(2, '0');
     const m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
@@ -48,12 +39,10 @@ const App = () => {
 
   const iniciarCronometro = () => {
     const start = Date.now();
-
     const interval = setInterval(() => {
       const diff = Math.floor((Date.now() - start) / 1000);
       setTempo(formatarTempo(diff));
     }, 1000);
-
     setTimerInterval(interval);
   };
 
@@ -62,6 +51,7 @@ const App = () => {
     setTimerInterval(null);
   };
 
+  // Handlers de eventos
   const handleSelectPlate = (plate) => {
     setSelectedPlate(plate);
     setTempo('00:00:00');
@@ -85,6 +75,7 @@ const App = () => {
     iniciarCronometro();
 
     try {
+      
       const res = await axios.post('http://localhost:3001/carregamentos', {
         placa: selectedPlate.placa,
         modelo: selectedPlate.modelo,
@@ -94,9 +85,10 @@ const App = () => {
         conferente,
         tempo: "00:00:00",
         data: dataSelecionada
+        //data: dataAjustada.toISOString().split('T')[0] ANALISAR!
       });
 
-      if (res.data.carregamento && res.data.carregamento.id) {
+      if (res.data.carregamento?.id) {
         setSelectedPlate(prev => ({ ...prev, id: res.data.carregamento.id }));
       }
     } catch (error) {
@@ -128,14 +120,14 @@ const App = () => {
       <h1>Carregamento Expedição</h1>
 
       <div className="data-seletor">
-      <div className="data-e-botao">
-      <label htmlFor="data">Selecione a Data:</label>
-      <input
-          type="date"
-          id="data"
-          value={dataSelecionada}
-          onChange={(e) => setDataSelecionada(e.target.value)}
-        />
+        <div className="data-e-botao">
+          <label htmlFor="data">Selecione a Data:</label>
+          <input
+            type="date"
+            id="data"
+            value={dataSelecionada}
+            onChange={(e) => setDataSelecionada(e.target.value)}
+          />
         </div>
         <button onClick={() => navigate('/consulta')} className="btn-consulta">
           🔍 Consulta
@@ -165,4 +157,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Dashboard;

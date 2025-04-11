@@ -1,34 +1,16 @@
+// backend/routes/carregamentos.js
 const express = require('express');
 const router = express.Router();
 const carregamentos = require('../models/carregamentos');
+const { DateTime } = require('luxon');
 
 // Obter carregamentos (com filtro por data)
 router.get('/', (req, res) => {
-  const { data } = req.query;
-  
+  const { data } = req.query;   
   if (data) {
-    // Valida o formato da data
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-      return res.status(400).json({ error: 'Formato de data inválido. Use YYYY-MM-DD' });
-    }
-
-    const resultados = carregamentos.filter(item => {
-      if (!item.horaInicio) return false;
-      
-      // Converte ambas as datas para o formato YYYY-MM-DD para comparação
-      const itemDate = new Date(item.horaInicio);
-      const filterDate = new Date(data);
-      
-      return (
-        itemDate.getFullYear() === filterDate.getFullYear() &&
-        itemDate.getMonth() === filterDate.getMonth() &&
-        itemDate.getDate() === filterDate.getDate()
-      );
-    });
-
-    return res.json(resultados);
+    const filtrados = carregamentos.filter(c => c.data === data);
+    return res.json(filtrados);
   }
-  
   res.json(carregamentos);
 });
 
@@ -36,12 +18,12 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const novo = req.body;
   novo.id = novo.id || Date.now();
-  
-  // Padronização dos campos de data
-  novo.horaInicio = novo.inicio || new Date().toISOString();
+
+  // Define horaInicio no fuso de São Paulo
+  const agoraSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+  novo.horaInicio = novo.inicio || new Date(agoraSP).toISOString();
   novo.horaFim = novo.fim || null;
-  
-  // Remove campos antigos se existirem
+
   delete novo.inicio;
   delete novo.fim;
 
@@ -52,7 +34,9 @@ router.post('/', (req, res) => {
     existente.tempo = novo.tempo;
     existente.equipe = novo.equipe;
     existente.conferente = novo.conferente;
-    existente.horaFim = new Date().toISOString();
+
+    const fimSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    existente.horaFim = new Date(fimSP).toISOString();
 
     console.log('⚠️ Atualizado:', existente);
     return res.status(200).json({
@@ -64,7 +48,7 @@ router.post('/', (req, res) => {
   carregamentos.push(novo);
   console.log('🚀 Novo criado:', novo);
   res.status(201).json({
-    mensagem: 'Novo carregamento criado com sucesso', 
+    mensagem: 'Novo carregamento criado com sucesso',
     carregamento: novo
   });
 });
@@ -75,7 +59,8 @@ router.put('/:id/finalizar', (req, res) => {
   const carregamento = carregamentos.find(c => String(c.id) === String(id));
 
   if (carregamento) {
-    const fim = new Date();
+    const fimSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    const fim = new Date(fimSP);
     carregamento.horaFim = fim.toISOString();
     carregamento.status = "Finalizado";
 
