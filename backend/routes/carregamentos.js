@@ -6,7 +6,7 @@ const { DateTime } = require('luxon');
 
 // Obter carregamentos (com filtro por data)
 router.get('/', (req, res) => {
-  const { data } = req.query;   
+  const { data } = req.query;
   if (data) {
     const filtrados = carregamentos.filter(c => c.data === data);
     return res.json(filtrados);
@@ -19,29 +19,41 @@ router.post('/', (req, res) => {
   const novo = req.body;
   novo.id = novo.id || Date.now();
 
-  // Define horaInicio no fuso de São Paulo
+  // Define horários no fuso de São Paulo
   const agoraSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-  novo.horaInicio = novo.inicio || new Date(agoraSP).toISOString();
-  novo.horaFim = novo.fim || null;
+  const horaAtual = new Date(agoraSP);
+  novo.horaInicio = horaAtual.toISOString();
+  novo.horaFim = horaAtual.toISOString();
 
+  // Remover possíveis campos desnecessários
   delete novo.inicio;
   delete novo.fim;
 
-  const existente = carregamentos.find(c => c.codigoBarra === novo.codigoBarra);
+  // Verifica se já existe com mesmo códigoBarra e data
+  const existente = carregamentos.find(
+    c => c.codigoBarra === novo.codigoBarra && c.data === novo.data
+  );
 
   if (existente) {
+    // Substituir horários e dados
+    existente.horaInicio = novo.horaInicio;
+    existente.horaFim = novo.horaFim;
     existente.status = novo.status;
-    existente.tempo = novo.tempo;
     existente.equipe = novo.equipe;
     existente.conferente = novo.conferente;
 
-    const fimSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    existente.horaFim = new Date(fimSP).toISOString();
+    const diffMs = new Date(existente.horaFim) - new Date(existente.horaInicio);
+    const horas = Math.floor(diffMs / 3600000);
+    const minutos = Math.floor((diffMs % 3600000) / 60000);
+    const segundos = Math.floor((diffMs % 60000) / 1000);
 
-    console.log('⚠️ Atualizado:', existente);
+    existente.tempo = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+
+    console.log('⚠️ Dados sobrescritos:', existente);
     return res.status(200).json({
-      mensagem: 'Carregamento atualizado com sucesso',
-      carregamento: existente
+      mensagem: '⚠️ Dados sobrescritos com novo horário',
+      carregamento: existente,
+      alerta: true
     });
   }
 
@@ -83,3 +95,4 @@ router.put('/:id/finalizar', (req, res) => {
 });
 
 module.exports = router;
+

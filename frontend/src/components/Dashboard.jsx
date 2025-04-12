@@ -6,12 +6,15 @@ import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
 import '../App.css';
+// src/components/Dashboard.jsx
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import '../styles/toastStyles.css'; // ⬅️ Importa estilos customizados
+
 
 const Dashboard = () => {
-  // Declare todas as variáveis de estado primeiro
-  const navigate = useNavigate();
-  
-  // Estados para datas e listagem
+const navigate = useNavigate();
+
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const hoje = new Date();
     return new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().split('T')[0];
@@ -20,7 +23,6 @@ const Dashboard = () => {
   const [plates, setPlates] = useState([
     { placa: "TM24R22", modelo: "0001", codigoBarra: "TM24R22-045", status: "Não iniciado" },
     { placa: "TM24R23", modelo: "0002", codigoBarra: "TM24R23-045", status: "Não iniciado" }
-    // ... (seus dados existentes)
   ]);
 
   const [selectedPlate, setSelectedPlate] = useState(null);
@@ -29,7 +31,6 @@ const Dashboard = () => {
   const [tempo, setTempo] = useState('00:00:00');
   const [timerInterval, setTimerInterval] = useState(null);
 
-  // Funções auxiliares
   const formatarTempo = (segundos) => {
     const h = String(Math.floor(segundos / 3600)).padStart(2, '0');
     const m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
@@ -51,7 +52,6 @@ const Dashboard = () => {
     setTimerInterval(null);
   };
 
-  // Handlers de eventos
   const handleSelectPlate = (plate) => {
     setSelectedPlate(plate);
     setTempo('00:00:00');
@@ -62,7 +62,7 @@ const Dashboard = () => {
 
   const handleStart = async () => {
     if (!selectedPlate || !equipe || !conferente) {
-      alert("Selecione uma placa e preencha os campos.");
+      toast.error("⚠️ Preencha todos os campos antes de iniciar!");
       return;
     }
 
@@ -75,7 +75,6 @@ const Dashboard = () => {
     iniciarCronometro();
 
     try {
-      
       const res = await axios.post('http://localhost:3001/carregamentos', {
         placa: selectedPlate.placa,
         modelo: selectedPlate.modelo,
@@ -85,14 +84,20 @@ const Dashboard = () => {
         conferente,
         tempo: "00:00:00",
         data: dataSelecionada
-        //data: dataAjustada.toISOString().split('T')[0] ANALISAR!
       });
+
+      if (res.data.alerta) {
+        toast.warning("⚠️ Dados dessa placa já existiam e foram sobrescritos!", { className: 'toast-error' });
+      } else {
+        toast.success("✅ Carregamento iniciado com sucesso!", { className: 'toast-success' });
+      }
 
       if (res.data.carregamento?.id) {
         setSelectedPlate(prev => ({ ...prev, id: res.data.carregamento.id }));
       }
     } catch (error) {
       console.error("Erro ao iniciar:", error);
+      toast.error("❌ Erro ao iniciar o carregamento.", { className: 'toast-error' });
     }
   };
 
@@ -110,8 +115,11 @@ const Dashboard = () => {
       );
       setPlates(updated);
       setSelectedPlate(finalizado);
-    } catch (error) {
+          toast.success("✅ Carregamento finalizado com sucesso!", { className: 'toast-success' });
+    }
+    catch (error) {
       console.error("Erro ao finalizar:", error);
+      toast.error("❌ Erro ao finalizar o carregamento.");
     }
   };
 
@@ -153,7 +161,18 @@ const Dashboard = () => {
           <Actions onStart={handleStart} onFinish={handleFinish} />
         </>
       )}
-    </div>
+
+      <ToastContainer
+          position="top-center"
+          autoClose={4000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover/>
+      </div>
   );
 };
 
