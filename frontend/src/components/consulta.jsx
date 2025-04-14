@@ -25,7 +25,7 @@ const Consulta = () => {
 
   return (
     <div className="consulta-container">
-      <h2>Consulta de Carregamentos 🔍</h2>
+      <h2>Consulta de Carregamento 🔍</h2>
 
       <div className="filtro-data">
         <label htmlFor="data">Data:</label>

@@ -11,6 +11,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toastStyles.css'; // ⬅️ Importa estilos customizados
 
+import logo from '../assets/logo2.png';
 
 const Dashboard = () => {
 const navigate = useNavigate();
@@ -125,8 +126,11 @@ const navigate = useNavigate();
 
   return (
     <div className="container">
-      <h1>Carregamento Expedição</h1>
+      <div className="logo-wrapper">
+        <img src={logo} alt="Logo da Empresa" className="logo" />
+      </div>
 
+      <h1>Carregamento Expedição</h1>
       <div className="data-seletor">
         <div className="data-e-botao">
           <label htmlFor="data">Selecione a Data:</label>
@@ -138,7 +142,7 @@ const navigate = useNavigate();
           />
         </div>
         <button onClick={() => navigate('/consulta')} className="btn-consulta">
-          🔍 Consulta
+          <strong>🔍 Consulta</strong>
         </button>
       </div>
 
