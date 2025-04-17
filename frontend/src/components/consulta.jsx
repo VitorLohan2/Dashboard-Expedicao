@@ -4,6 +4,11 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Consulta.css';
 
+import { faArrowLeft, faDownload, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+import lupaImg from '../assets/lupa.png'; // ajuste o caminho se necessário
+
 const Consulta = () => {
   const [data, setData] = useState('');
   const [carregamentos, setCarregamentos] = useState([]);
@@ -25,7 +30,9 @@ const Consulta = () => {
 
   return (
     <div className="consulta-container">
-      <h2>Consulta de Carregamento 🔍</h2>
+      <h2>
+        Consulta de Carregamento <img src={lupaImg} alt="Lupa" style={{ width: '28px', height: '28px' }} />
+      </h2>
 
       <div className="filtro-data">
         <label htmlFor="data">Data:</label>
@@ -35,8 +42,11 @@ const Consulta = () => {
           value={data}
           onChange={(e) => setData(e.target.value)}
         />
-        <button onClick={buscarCarregamentos}>Buscar</button>
-        <button className="btn-voltar" onClick={() => navigate('/')}>⬅ Voltar</button>
+        <button onClick={buscarCarregamentos}><strong>Buscar</strong></button>
+        <button className="btn-voltar" onClick={() => navigate('/')}>
+        <strong><FontAwesomeIcon icon={faArrowLeft} style={{ color: "#fff", fontSize: "13px"}}/> Voltar</strong>
+        </button>
+        <button className="btn-relatorio"><strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px"}}/> Relatório</strong></button>
       </div>
 
       <table>

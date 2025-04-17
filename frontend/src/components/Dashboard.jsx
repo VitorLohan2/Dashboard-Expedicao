@@ -11,6 +11,10 @@ import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toastStyles.css';
 import logo from '../assets/logo2.png';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+
+
 const Dashboard = () => {
   const navigate = useNavigate();
 
@@ -157,7 +161,7 @@ const Dashboard = () => {
           />
         </div>
         <button onClick={() => navigate('/consulta')} className="btn-consulta">
-          <strong>🔍 Consulta</strong>
+          <strong><FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: "#fff", fontSize: "16px"}} /> Consulta</strong>
         </button>
       </div>
 
