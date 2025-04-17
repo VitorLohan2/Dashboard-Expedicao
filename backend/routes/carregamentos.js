@@ -1,98 +1,115 @@
 // backend/routes/carregamentos.js
 const express = require('express');
 const router = express.Router();
-const carregamentos = require('../models/carregamentos');
+const Carregamento = require('../models/carregamento');
 const { DateTime } = require('luxon');
 
 // Obter carregamentos (com filtro por data)
-router.get('/', (req, res) => {
-  const { data } = req.query;
-  if (data) {
-    const filtrados = carregamentos.filter(c => c.data === data);
-    return res.json(filtrados);
+// GET placas da data
+router.get('/', async (req, res) => {
+  try {
+    const { data } = req.query;
+
+    // Busca todas as placas existentes no sistema (pré-cadastradas)
+    const todasPlacas = await Carregamento.find();
+
+    // Busca as placas com registros para a data selecionada
+    const placasNaData = await Carregamento.find({ data });
+
+    // Cria um dicionário rápido para saber quais foram atualizadas nessa data
+    const mapaData = new Map(placasNaData.map(p => [p.idPlaca, p]));
+
+    // Junta os dados, priorizando os dados da data selecionada
+    const resultado = todasPlacas.map(placa => {
+      const atualNaData = mapaData.get(placa.idPlaca);
+      return atualNaData
+        ? atualNaData
+        : {
+            _id: placa._id,
+            idPlaca: placa.idPlaca,
+            codigoBarra: placa.codigoBarra || '',
+            status: 'Não iniciado',
+            data,
+            equipe: '',
+            conferente: '',
+            horaInicio: '',
+            horaFim: '',
+            tempo: ''
+          };
+    });
+
+    res.json(resultado);
+  } catch (error) {
+    console.error('Erro ao buscar placas:', error);
+    res.status(500).json({ erro: 'Erro ao buscar placas' });
   }
-  res.json(carregamentos);
 });
 
 // Criar novo carregamento
-router.post('/', (req, res) => {
-  const novo = req.body;
-  novo.id = novo.id || Date.now();
+// PUT iniciar carregamento
+router.put('/:idPlaca/iniciar', async (req, res) => {
+  const { idPlaca } = req.params;
+  const { equipe, conferente, data } = req.body;
 
-  // Define horários no fuso de São Paulo
-  const agoraSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-  const horaAtual = new Date(agoraSP);
-  novo.horaInicio = horaAtual.toISOString();
-  novo.horaFim = horaAtual.toISOString();
+  try {
+    const atualizado = await Carregamento.findOneAndUpdate(
+      { idPlaca, data },
+      {
+        $set: {
+          status: 'Em andamento',
+          equipe,
+          conferente,
+          horaInicio: new Date(),
+          updatedAt: new Date()
+        }
+      },
+      { new: true, upsert: true }
+    );
 
-  // Remover possíveis campos desnecessários
-  delete novo.inicio;
-  delete novo.fim;
-
-  // Verifica se já existe com mesmo códigoBarra e data
-  const existente = carregamentos.find(
-    c => c.codigoBarra === novo.codigoBarra && c.data === novo.data
-  );
-
-  if (existente) {
-    // Substituir horários e dados
-    existente.horaInicio = novo.horaInicio;
-    existente.horaFim = novo.horaFim;
-    existente.status = novo.status;
-    existente.equipe = novo.equipe;
-    existente.conferente = novo.conferente;
-
-    const diffMs = new Date(existente.horaFim) - new Date(existente.horaInicio);
-    const horas = Math.floor(diffMs / 3600000);
-    const minutos = Math.floor((diffMs % 3600000) / 60000);
-    const segundos = Math.floor((diffMs % 60000) / 1000);
-
-    existente.tempo = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-
-    console.log('⚠️ Dados sobrescritos:', existente);
-    return res.status(200).json({
-      mensagem: '⚠️ Dados sobrescritos com novo horário',
-      carregamento: existente,
-      alerta: true
-    });
+    res.json({ carregamento: atualizado });
+  } catch (error) {
+    console.error('Erro ao iniciar:', error);
+    res.status(500).json({ erro: 'Erro ao iniciar carregamento' });
   }
-
-  carregamentos.push(novo);
-  console.log('🚀 Novo criado:', novo);
-  res.status(201).json({
-    mensagem: 'Novo carregamento criado com sucesso',
-    carregamento: novo
-  });
 });
+
 
 // Finalizar carregamento
-router.put('/:id/finalizar', (req, res) => {
-  const id = req.params.id;
-  const carregamento = carregamentos.find(c => String(c.id) === String(id));
+// PUT finalizar carregamento
+router.put('/:idPlaca/finalizar', async (req, res) => {
+  const { idPlaca } = req.params;
+  const { data } = req.body;
 
-  if (carregamento) {
-    const fimSP = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    const fim = new Date(fimSP);
-    carregamento.horaFim = fim.toISOString();
-    carregamento.status = "Finalizado";
+  try {
+    const registro = await Carregamento.findOne({ idPlaca, data });
 
-    const inicio = new Date(carregamento.horaInicio);
-    const diffMs = fim - inicio;
-    const horas = Math.floor(diffMs / 3600000);
-    const minutos = Math.floor((diffMs % 3600000) / 60000);
-    const segundos = Math.floor((diffMs % 60000) / 1000);
+    if (!registro) return res.status(404).json({ erro: 'Registro não encontrado' });
 
-    carregamento.tempo = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+    const horaFim = new Date();
+    const diffSegundos = Math.floor((horaFim - new Date(registro.horaInicio)) / 1000);
 
-    console.log('✅ Finalizado no backend:', carregamento);
-    res.json({
-      message: 'Carregamento finalizado',
-      carregamento
-    });
-  } else {
-    res.status(404).json({ error: 'Carregamento não encontrado' });
+    const formatarTempo = (s) => {
+      const h = String(Math.floor(s / 3600)).padStart(2, '0');
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const sec = String(s % 60).padStart(2, '0');
+      return `${h}:${m}:${sec}`;
+    };
+
+    const tempoTotal = formatarTempo(diffSegundos);
+
+    registro.horaFim = horaFim;
+    registro.status = 'Finalizado';
+    registro.tempo = tempoTotal;
+    await registro.save();
+
+    res.json({ carregamento: registro });
+  } catch (error) {
+    console.error('Erro ao finalizar:', error);
+    res.status(500).json({ erro: 'Erro ao finalizar carregamento' });
   }
 });
+
+
 
 module.exports = router;
 

@@ -1,36 +1,56 @@
-// src/components/Dashboard.jsx
-import React, { useState } from 'react';
+/// src/components/Dashboard.jsx
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
 import '../App.css';
-// src/components/Dashboard.jsx
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import '../styles/toastStyles.css'; // ⬅️ Importa estilos customizados
-
+import '../styles/toastStyles.css';
 import logo from '../assets/logo2.png';
 
 const Dashboard = () => {
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const hoje = new Date();
     return new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
 
-  const [plates, setPlates] = useState([
-    { placa: "TM24R22", modelo: "0001", codigoBarra: "TM24R22-045", status: "Não iniciado" },
-    { placa: "TM24R23", modelo: "0002", codigoBarra: "TM24R23-045", status: "Não iniciado" }
-  ]);
-
+  const [plates, setPlates] = useState([]);
   const [selectedPlate, setSelectedPlate] = useState(null);
   const [equipe, setEquipe] = useState('');
   const [conferente, setConferente] = useState('');
   const [tempo, setTempo] = useState('00:00:00');
   const [timerInterval, setTimerInterval] = useState(null);
+
+  useEffect(() => {
+    const fetchPlates = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/carregamentos?data=${dataSelecionada}`);
+        const placasFormatadas = res.data.map(item => ({
+          id: item._id,
+          idPlaca: item.idPlaca,
+          placa: item.placa,          // ✅ Adicione isso
+          modelo: item.modelo,        // ✅ Corrigir isso
+          codigoBarra: item.codigoBarra,
+          status: item.status,
+          equipe: item.equipe || '',
+          conferente: item.conferente || '',
+          horaInicio: item.horaInicio,
+          horaFim: item.horaFim,
+          tempo: item.tempo || '00:00:00'
+        }));
+        setPlates(placasFormatadas);
+      } catch (err) {
+        console.error("Erro ao buscar placas:", err);
+        toast.warning("⚠️ Não foi possível carregar placas salvas.");
+      }
+    };
+    fetchPlates();
+  }, [dataSelecionada]);
 
   const formatarTempo = (segundos) => {
     const h = String(Math.floor(segundos / 3600)).padStart(2, '0');
@@ -55,10 +75,10 @@ const navigate = useNavigate();
 
   const handleSelectPlate = (plate) => {
     setSelectedPlate(plate);
-    setTempo('00:00:00');
-    pararCronometro();
+    setTempo(plate.tempo || '00:00:00');
     setEquipe('');
     setConferente('');
+    pararCronometro();
   };
 
   const handleStart = async () => {
@@ -68,7 +88,7 @@ const navigate = useNavigate();
     }
 
     const updated = plates.map(p =>
-      p.codigoBarra === selectedPlate.codigoBarra
+      p.idPlaca === selectedPlate.idPlaca
         ? { ...p, status: "Em andamento" }
         : p
     );
@@ -76,14 +96,9 @@ const navigate = useNavigate();
     iniciarCronometro();
 
     try {
-      const res = await axios.post('http://localhost:3001/carregamentos', {
-        placa: selectedPlate.placa,
-        modelo: selectedPlate.modelo,
-        codigoBarra: selectedPlate.codigoBarra,
-        status: "Em andamento",
+      const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/iniciar`, {
         equipe,
         conferente,
-        tempo: "00:00:00",
         data: dataSelecionada
       });
 
@@ -93,8 +108,8 @@ const navigate = useNavigate();
         toast.success("✅ Carregamento iniciado com sucesso!", { className: 'toast-success' });
       }
 
-      if (res.data.carregamento?.id) {
-        setSelectedPlate(prev => ({ ...prev, id: res.data.carregamento.id }));
+      if (res.data.carregamento?._id) {
+        setSelectedPlate(prev => ({ ...prev, id: res.data.carregamento._id }));
       }
     } catch (error) {
       console.error("Erro ao iniciar:", error);
@@ -104,21 +119,21 @@ const navigate = useNavigate();
 
   const handleFinish = async () => {
     if (!selectedPlate) return;
-
     pararCronometro();
 
     try {
-      const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.id}/finalizar`);
+      const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/finalizar`, {
+        data: dataSelecionada
+      });
       const finalizado = res.data.carregamento;
 
       const updated = plates.map(p =>
-        p.codigoBarra === finalizado.codigoBarra ? finalizado : p
+        p.idPlaca === finalizado.idPlaca ? finalizado : p
       );
       setPlates(updated);
       setSelectedPlate(finalizado);
-          toast.success("✅ Carregamento finalizado com sucesso!", { className: 'toast-success' });
-    }
-    catch (error) {
+      toast.success("✅ Carregamento finalizado com sucesso!", { className: 'toast-success' });
+    } catch (error) {
       console.error("Erro ao finalizar:", error);
       toast.error("❌ Erro ao finalizar o carregamento.");
     }
@@ -167,16 +182,17 @@ const navigate = useNavigate();
       )}
 
       <ToastContainer
-          position="top-center"
-          autoClose={4000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover/>
-      </div>
+        position="top-center"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+    </div>
   );
 };
 

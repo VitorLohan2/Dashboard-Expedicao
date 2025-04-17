@@ -4,7 +4,7 @@ import JsBarcode from 'jsbarcode';
 
 const PlateDetails = ({ selectedPlate, equipe, setEquipe, conferente, setConferente, tempo }) => {
   useEffect(() => {
-    if (selectedPlate) {
+    if (selectedPlate && selectedPlate.codigoBarra) {
       JsBarcode("#barcode", selectedPlate.codigoBarra, {
         format: "CODE128",
         lineColor: "#000",
@@ -13,7 +13,7 @@ const PlateDetails = ({ selectedPlate, equipe, setEquipe, conferente, setConfere
         displayValue: true
       });
     }
-  }, [selectedPlate]);
+  }, [selectedPlate]); // Agora, 'selectedPlate' é a dependência
 
   return (
     <div className="details">
@@ -23,10 +23,8 @@ const PlateDetails = ({ selectedPlate, equipe, setEquipe, conferente, setConfere
         <p><strong>Modelo:</strong> {selectedPlate.modelo}</p>
         <svg
           id="barcode"
-          style={{ width: "100%", maxWidth: "100%", height: "auto", maxHeight: "80px", marginTop: "10px" }}
-        ></svg>
-
-
+          style={{ width: "100%", maxWidth: "100%", height: "auto", maxHeight: "80px", marginTop: "10px" }}>
+        </svg>
       </div>
       <div>
         <h2>Equipe & Conferente</h2>

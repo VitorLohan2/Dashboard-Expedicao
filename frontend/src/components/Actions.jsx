@@ -1,6 +1,7 @@
 // src/components/Actions.jsx
 import React from 'react';
 
+
 const Actions = ({ onStart, onFinish }) => {
   return (
     <div className="actions">
