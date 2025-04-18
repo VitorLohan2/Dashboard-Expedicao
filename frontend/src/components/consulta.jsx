@@ -4,6 +4,9 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Consulta.css';
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 import { faArrowLeft, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import '@fontsource/inter/400.css';
@@ -27,6 +30,40 @@ const Consulta = () => {
     });
   };
 
+  const gerarPDF = () => {
+    if (carregamentos.length === 0) {
+      alert("Nenhum carregamento finalizado para gerar relatório.");
+      return;
+    }
+  
+    const doc = new jsPDF();    //RELATÓRIO PDF
+  
+    doc.setFontSize(16);
+    doc.text('Relatório de Carregamentos Finalizados', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Data: ${data}`, 14, 28);
+    doc.text(`Tempo Total: ${tempoTotal}`, 14, 35);
+  
+    const tableData = carregamentos.map(item => ([
+      item.placa,
+      item.modelo || '-',
+      item.equipe || '-',
+      item.conferente || '-',
+      formatarHorario(item.horaInicio),
+      formatarHorario(item.horaFim),
+      item.tempo || '-'
+    ]));
+  
+    autoTable(doc, {
+      startY: 45,
+      head: [['Placa', 'Modelo', 'Equipe', 'Conferente', 'Início', 'Fim', 'Tempo']],
+      body: tableData,
+    });
+  
+    doc.save(`relatorio_carregamentos_${data}.pdf`);
+  };
+  
+  
   const buscarCarregamentos = async () => {
     if (!data) return alert("Selecione uma data!");
 
@@ -73,9 +110,10 @@ const Consulta = () => {
         <button className="btn-voltar" onClick={() => navigate('/')}>
           <strong><FontAwesomeIcon icon={faArrowLeft} style={{ color: "#fff", fontSize: "13px" }} /> Voltar</strong>
         </button>
-        <button className="btn-relatorio">
-          <strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px" }} /> Relatório</strong>
+        <button className="btn-relatorio" onClick={gerarPDF}>
+        <strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px" }} /> Relatório</strong>
         </button>
+
       </div>
 
       {tempoTotal && (

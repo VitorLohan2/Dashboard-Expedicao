@@ -5,6 +5,8 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "dayjs": "^1.11.13",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "luxon": "^3.6.1",
     "mongodb": "^6.15.0",
     "mongoose": "^8.13.2",
