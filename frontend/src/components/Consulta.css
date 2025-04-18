@@ -1,7 +1,7 @@
 .consulta-container {
   max-width: 900px;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: #fff;
 }
 
@@ -118,6 +118,18 @@ label {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.tempo-total-destaque {
+  background-color: #e9f5ec;
+  text-align: center;
+  padding: 2px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1b5e20;
+  border: 2px solid #c8e6c9;
+  
 }
 
 /* Responsividade */

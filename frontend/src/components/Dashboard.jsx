@@ -11,9 +11,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toastStyles.css';
 import logo from '../assets/logo2.png';
 
+import '@fontsource/inter/400.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,16 +29,19 @@ const Dashboard = () => {
   const [conferente, setConferente] = useState('');
   const [tempo, setTempo] = useState('00:00:00');
   const [timerInterval, setTimerInterval] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchPlates = async () => {
       try {
         const res = await axios.get(`http://localhost:3001/carregamentos?data=${dataSelecionada}`);
-        const placasFormatadas = res.data.map(item => ({
+        const placasFormatadas = res.data
+          .filter(item => item.placa && item.placa.trim() !== "") // <-- filtra placas vazias
+          .map(item => ({
           id: item._id,
           idPlaca: item.idPlaca,
-          placa: item.placa,          // ✅ Adicione isso
-          modelo: item.modelo,        // ✅ Corrigir isso
+          placa: item.placa,
+          modelo: item.modelo,
           codigoBarra: item.codigoBarra,
           status: item.status,
           equipe: item.equipe || '',
@@ -63,8 +66,8 @@ const Dashboard = () => {
     return `${h}:${m}:${s}`;
   };
 
-  const iniciarCronometro = () => {
-    const start = Date.now();
+  const iniciarCronometro = (segundosJaDecorridos = 0) => {
+    const start = Date.now() - segundosJaDecorridos * 1000;
     const interval = setInterval(() => {
       const diff = Math.floor((Date.now() - start) / 1000);
       setTempo(formatarTempo(diff));
@@ -79,10 +82,18 @@ const Dashboard = () => {
 
   const handleSelectPlate = (plate) => {
     setSelectedPlate(plate);
-    setTempo(plate.tempo || '00:00:00');
-    setEquipe('');
-    setConferente('');
+    setEquipe(plate.equipe || '');
+    setConferente(plate.conferente || '');
     pararCronometro();
+
+    if (plate.status === 'Em andamento' && plate.horaInicio) {
+      const inicio = new Date(plate.horaInicio);
+      const diff = Math.floor((Date.now() - new Date(inicio).getTime()) / 1000);
+      setTempo(formatarTempo(diff));
+      iniciarCronometro(diff);
+    } else {
+      setTempo(plate.tempo || '00:00:00');
+    }
   };
 
   const handleStart = async () => {
@@ -91,13 +102,12 @@ const Dashboard = () => {
       return;
     }
 
-    const updated = plates.map(p =>
-      p.idPlaca === selectedPlate.idPlaca
-        ? { ...p, status: "Em andamento" }
-        : p
-    );
-    setPlates(updated);
-    iniciarCronometro();
+    if (selectedPlate.status === 'Em andamento' || selectedPlate.status === 'Finalizado') {
+      toast.info("⚠️ Essa placa já foi iniciada ou finalizada.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/iniciar`, {
@@ -106,40 +116,58 @@ const Dashboard = () => {
         data: dataSelecionada
       });
 
+      const atualizado = res.data.carregamento;
+
       if (res.data.alerta) {
         toast.warning("⚠️ Dados dessa placa já existiam e foram sobrescritos!", { className: 'toast-error' });
       } else {
         toast.success("✅ Carregamento iniciado com sucesso!", { className: 'toast-success' });
       }
 
-      if (res.data.carregamento?._id) {
-        setSelectedPlate(prev => ({ ...prev, id: res.data.carregamento._id }));
+      const updated = plates.map(p => p.idPlaca === atualizado.idPlaca ? atualizado : p);
+      setPlates(updated);
+      setSelectedPlate(atualizado);
+
+      if (atualizado.horaInicio) {
+        const diff = Math.floor((Date.now() - new Date(atualizado.horaInicio).getTime()) / 1000);
+        setTempo(formatarTempo(diff));
+        iniciarCronometro(diff);
       }
     } catch (error) {
       console.error("Erro ao iniciar:", error);
-      toast.error("❌ Erro ao iniciar o carregamento.", { className: 'toast-error' });
+      toast.error("❌ Erro ao iniciar o carregamento.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleFinish = async () => {
     if (!selectedPlate) return;
+
+    if (selectedPlate.status !== 'Em andamento') {
+      toast.info("⚠️ Essa placa ainda não foi iniciada.");
+      return;
+    }
+
+    setLoading(true);
     pararCronometro();
 
     try {
       const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/finalizar`, {
         data: dataSelecionada
       });
-      const finalizado = res.data.carregamento;
 
-      const updated = plates.map(p =>
-        p.idPlaca === finalizado.idPlaca ? finalizado : p
-      );
+      const finalizado = res.data.carregamento;
+      const updated = plates.map(p => p.idPlaca === finalizado.idPlaca ? finalizado : p);
       setPlates(updated);
       setSelectedPlate(finalizado);
+
       toast.success("✅ Carregamento finalizado com sucesso!", { className: 'toast-success' });
     } catch (error) {
       console.error("Erro ao finalizar:", error);
       toast.error("❌ Erro ao finalizar o carregamento.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,7 +177,7 @@ const Dashboard = () => {
         <img src={logo} alt="Logo da Empresa" className="logo" />
       </div>
 
-      <h1>Carregamento Expedição</h1>
+      <h1 className="titulo-dashboard">Carregamento Expedição</h1>
       <div className="data-seletor">
         <div className="data-e-botao">
           <label htmlFor="data">Selecione a Data:</label>
@@ -181,7 +209,11 @@ const Dashboard = () => {
             setConferente={setConferente}
             tempo={tempo}
           />
-          <Actions onStart={handleStart} onFinish={handleFinish} />
+          <Actions
+            onStart={handleStart}
+            onFinish={handleFinish}
+            loading={loading}
+          />
         </>
       )}
 
@@ -201,3 +233,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+

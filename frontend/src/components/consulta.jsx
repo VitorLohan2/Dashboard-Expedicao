@@ -4,15 +4,28 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Consulta.css';
 
-import { faArrowLeft, faDownload, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import '@fontsource/inter/400.css';
 
-import lupaImg from '../assets/lupa.png'; // ajuste o caminho se necessário
+import lupaImg from '../assets/lupa.png';
 
 const Consulta = () => {
   const [data, setData] = useState('');
   const [carregamentos, setCarregamentos] = useState([]);
+  const [tempoTotal, setTempoTotal] = useState('');
   const navigate = useNavigate();
+
+  const formatarHorario = (isoString) => {
+    if (!isoString) return '';
+    const data = new Date(isoString);
+    return data.toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  };
 
   const buscarCarregamentos = async () => {
     if (!data) return alert("Selecione uma data!");
@@ -23,6 +36,20 @@ const Consulta = () => {
 
       finalizados.sort((a, b) => new Date(a.horaInicio) - new Date(b.horaInicio));
       setCarregamentos(finalizados);
+
+      // Calcular tempo total
+      const totalSegundos = finalizados.reduce((total, item) => {
+        const partes = item.tempo?.split(':');
+        if (!partes || partes.length !== 3) return total;
+        const [h, m, s] = partes.map(Number);
+        return total + (h * 3600 + m * 60 + s);
+      }, 0);
+
+      const horas = Math.floor(totalSegundos / 3600);
+      const minutos = Math.floor((totalSegundos % 3600) / 60);
+      const segundos = totalSegundos % 60;
+
+      setTempoTotal(`${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`);
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
     }
@@ -44,15 +71,24 @@ const Consulta = () => {
         />
         <button onClick={buscarCarregamentos}><strong>Buscar</strong></button>
         <button className="btn-voltar" onClick={() => navigate('/')}>
-        <strong><FontAwesomeIcon icon={faArrowLeft} style={{ color: "#fff", fontSize: "13px"}}/> Voltar</strong>
+          <strong><FontAwesomeIcon icon={faArrowLeft} style={{ color: "#fff", fontSize: "13px" }} /> Voltar</strong>
         </button>
-        <button className="btn-relatorio"><strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px"}}/> Relatório</strong></button>
+        <button className="btn-relatorio">
+          <strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px" }} /> Relatório</strong>
+        </button>
       </div>
+
+      {tempoTotal && (
+        <div className="tempo-total-destaque">
+          ⏱️ <strong>Tempo Total do Dia:</strong> {tempoTotal}
+        </div>
+      )}
 
       <table>
         <thead>
           <tr>
             <th>Placa</th>
+            <th>Roteiro</th>
             <th>Modelo</th>
             <th>Equipe</th>
             <th>Conferente</th>
@@ -65,11 +101,12 @@ const Consulta = () => {
           {carregamentos.map((item, index) => (
             <tr key={index}>
               <td><strong>{item.placa}</strong></td>
+              <td></td>
               <td>{item.modelo}</td>
               <td>{item.equipe}</td>
               <td>{item.conferente}</td>
-              <td>{item.horaInicio}</td>
-              <td>{item.horaFim}</td>
+              <td>{formatarHorario(item.horaInicio)}</td>
+              <td>{formatarHorario(item.horaFim)}</td>
               <td>{item.tempo}</td>
             </tr>
           ))}
@@ -80,3 +117,4 @@ const Consulta = () => {
 };
 
 export default Consulta;
+
