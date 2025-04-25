@@ -1,16 +1,12 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
+  timeout: 10000
 });
 
-// Adicione interceptors para melhor tratamento de erros
-api.interceptors.response.use(
-    response => response,
-    error => {
-      console.error('API Error:', error);
-      return Promise.reject(error);
-    }
-  );
-  
+console.log('✅ URL da API:', api); // Verifique no console
+
+console.log('API Base URL:', api.defaults.baseURL); // Verifique no console
+
 export default api;
