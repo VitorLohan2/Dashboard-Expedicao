@@ -61,7 +61,7 @@ router.put('/:idPlaca/finalizar', async (req, res) => {
 
     const horaFim = new Date();
     // CÁLCULO CORRIGIDO - Parênteses balanceados:
-    const diffSegundos = Math.floor((horaFim - new Date(registro.horaInicio))) / 1000;
+    const diffSegundos = Math.floor((horaFim - new Date(registro.horaInicio)) / 1000);
 
     const formatarTempo = (segundos) => {
       const horas = String(Math.floor(segundos / 3600)).padStart(2, '0');

@@ -126,7 +126,6 @@ const Consulta = () => {
         <thead>
           <tr>
             <th>Placa</th>
-            <th>Roteiro</th>
             <th>Modelo</th>
             <th>Equipe</th>
             <th>Conferente</th>
@@ -139,7 +138,6 @@ const Consulta = () => {
           {carregamentos.map((item, index) => (
             <tr key={index}>
               <td><strong>{item.placa}</strong></td>
-              <td></td>
               <td>{item.modelo}</td>
               <td>{item.equipe}</td>
               <td>{item.conferente}</td>

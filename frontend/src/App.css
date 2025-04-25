@@ -1,16 +1,15 @@
 html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: hidden
 }
 
 body {
   font-family: 'Inter', sans-serif;
   background: #000;
   margin: 0;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
+  padding: 0;
+  min-height: 100vh;
+  /*display: flex;*/
+  /*justify-content: center;*/
 }
 
 /*LOGO*/
@@ -28,12 +27,15 @@ body {
 /*  */
 .container {
   width: 100%;
-  max-width: 1920px;
+  max-width: 800px;
+  margin: 0 auto;
   background: #fff; /*FUNDO GERAL*/
   padding: 20px;
   border-radius: 5px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
+  overflow-x: hidden; /* Corte seguro */
+
 }
 
 h1, h2 {
@@ -107,11 +109,14 @@ tbody tr:hover {
 .actions {
   margin-top: 20px;
   text-align: center;
+  justify-content: center;
 }
 
 button {
   padding: 10px 20px;
   margin: 0px 5px;
+  flex-wrap: wrap;
+  justify-content: center;
   border: none;
   border-radius: 3px;
   background-color: #007bff;
@@ -201,15 +206,16 @@ label {
 
 .data-seletor {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-  gap: 10px;
+  align-items: flex-end; /* alinha input e botão pela base */
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap; /* quebra em telas menores */
 }
 
 .data-seletor label {
+  flex-direction: column;
+  align-items: center;
   font-weight: bold;
-  margin-bottom: 5px;
 }
 
 .data-seletor input {
@@ -219,8 +225,17 @@ label {
   border: 1px solid #ccc;
 }
 
+.data-e-botao {
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo-dashboard {
+  margin: 30px 0px 30px 0px;
+}
+
 .btn-consulta {
-  padding: 10px 20px;
+  padding: 0.6rem 1.2rem;
   margin-top: 10px;
   border: none;
   border-radius: 10px;
@@ -249,12 +264,23 @@ label {
   background-color: #777;
 }
 
+/* useEffect ~ NOTIFICAÇÃO */
+.toast-aviso-importante {
+  background-color: #ffcc00 !important;
+  color: #000 !important;
+  font-weight: bold;
+  border-left: 6px solid #d48806;
+  font-family: 'Inter', sans-serif;
+}
+
+
 /* RESPONSIVIDADE */
-@media (max-width: 768px) {
+@media (min-width: 481px) and (max-width: 913px) {
   .container {
-    padding: 15px;
+    width: 100%;
+    /*padding: 15px;
     box-sizing: border-box;
-    min-width: 370px;
+    /*min-width: 370px;*/
   }
 
   table {
@@ -263,11 +289,8 @@ label {
 
   th, td {
     padding: 8px;
-  }
-
-  button {
-    width: 100%;
-    margin: 5px 0;
+    font-size: 16px;
+    white-space: nowrap;
   }
 
   .tempo-box {
@@ -276,44 +299,43 @@ label {
   }
 }
 
-@media (max-width: 480px) {
-  h1, h2 {
-    font-size: 1.2rem;
-  }
+@media (min-width: 360px) and (max-width:410px){
 
-  table {
-    font-size: 12px;
+  .actions{
+    justify-content: center;    
   }
-
-  .tempo-box {
-    font-size: 0.95rem;
+  .iniciar {
+    font-size: 10px;
   }
-
-  .container {
-    padding: 10px;
-    min-width: 370px;
+  .finalizar{
+    font-size: 10px;
   }
 }
+@media (min-width:412px){
 
-@media (min-width: 769px) {
-  .data-seletor {
-    flex-direction: row;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 20px;
+  .actions{
+    align-items: center;
   }
-
-  .data-seletor label {
-    margin: 0;
+  .iniciar {
+    font-size: 14px;
+    padding: 7px;
   }
-
-  .data-seletor input {
-    margin: 0;
-  }
-
-  .btn-consulta {
-    margin-top: 0;
+  .finalizar{
+    font-size: 14px;
+    padding: 7px;
   }
 }
+@media (min-width:430px){
 
-
+  .actions{
+    align-items: center;
+  }
+  .iniciar {
+    font-size: 13px;
+    padding: 8px;
+  }
+  .finalizar{
+    font-size: 13px;
+    padding: 8px;
+  }
+}

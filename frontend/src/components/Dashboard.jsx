@@ -6,7 +6,7 @@ import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
 import '../App.css';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify'; //Notificação
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toastStyles.css';
 import logo from '../assets/logo2.png';
@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
+
   const navigate = useNavigate();
 
   const [dataSelecionada, setDataSelecionada] = useState(() => {
@@ -30,6 +31,18 @@ const Dashboard = () => {
   const [tempo, setTempo] = useState('00:00:00');
   const [timerInterval, setTimerInterval] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    toast.info('⚠️ Atenção: Confira a data selecionada antes de iniciar os carregamentos.', {
+      position: 'top-center',
+      autoClose: 8000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      className: 'toast-aviso-importante', // <- classe customizada
+    });
+  }, []);
 
   useEffect(() => {
     const fetchPlates = async () => {

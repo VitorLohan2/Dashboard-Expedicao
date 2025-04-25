@@ -1,4 +1,4 @@
-// backend/models/carregamentos.js
+// backend/models/carregamento.js
 const mongoose = require('mongoose');
 
 const carregamentoSchema = new mongoose.Schema({
