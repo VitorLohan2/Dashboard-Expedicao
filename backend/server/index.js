@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const carregamentoRoutes = require('../routes/carregamentos');
 
 const app = express();
-const port = 3001; // Alterado de 5000 para 3001
+const port = process.env.PORT || 3001; // Alterado de 5000 para 3001
 
 // Conexão com MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
