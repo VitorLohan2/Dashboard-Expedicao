@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './Consulta.css';
+import api from '../services/api'; //Servidor
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -68,7 +69,7 @@ const Consulta = () => {
     if (!data) return alert("Selecione uma data!");
 
     try {
-      const response = await axios.get(`http://localhost:3001/carregamentos?data=${data}`);
+      const response = await api.get(`/carregamentos?data=${data}`); //`http://localhost:3001/carregamentos?data=${data}`
       const finalizados = response.data.filter(item => item.status === "Finalizado");
 
       finalizados.sort((a, b) => new Date(a.horaInicio) - new Date(b.horaInicio));

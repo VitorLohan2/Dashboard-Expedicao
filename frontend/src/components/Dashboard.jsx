@@ -5,6 +5,8 @@ import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
+import api from '../services/api'; // ajuste o caminho conforme sua estrutura
+
 import '../App.css';
 import { ToastContainer, toast } from 'react-toastify'; //Notificação
 import 'react-toastify/dist/ReactToastify.css';
@@ -47,7 +49,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchPlates = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/carregamentos?data=${dataSelecionada}`);
+        const res = await api.get(`/carregamentos?data=${dataSelecionada}`);
         const placasFormatadas = res.data
           .filter(item => item.placa && item.placa.trim() !== "") // <-- filtra placas vazias
           .map(item => ({
@@ -123,7 +125,7 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
-      const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/iniciar`, {
+      const res = await api.put(`/carregamentos/${selectedPlate.idPlaca}/iniciar`, {
         equipe,
         conferente,
         data: dataSelecionada
@@ -166,7 +168,7 @@ const Dashboard = () => {
     pararCronometro();
 
     try {
-      const res = await axios.put(`http://localhost:3001/carregamentos/${selectedPlate.idPlaca}/finalizar`, {
+      const res = await api.put(`/carregamentos/${selectedPlate.idPlaca}/finalizar`, {
         data: dataSelecionada
       });
 
