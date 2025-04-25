@@ -5,6 +5,7 @@ import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
+
 import api from '../services/api'; // ajuste o caminho conforme sua estrutura
 
 import '../App.css';
