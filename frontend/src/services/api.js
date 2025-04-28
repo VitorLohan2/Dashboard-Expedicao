@@ -10,5 +10,3 @@ console.log('✅ URL da API:', api); // Verifique no console
 console.log('API Base URL:', api.defaults.baseURL); // Verifique no console
 
 export default api;
-
-jknasjknbfsajbkbjksfa

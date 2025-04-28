@@ -1,26 +1,24 @@
 /// src/components/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+/// src/components/Dashboard.jsx
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import axios from 'axios';
-
-import api from '../services/api'; // ajuste o caminho conforme sua estrutura
-
+import api from '../services/api';
 import '../App.css';
-import { ToastContainer, toast } from 'react-toastify'; //Notificação
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/toastStyles.css';
 import logo from '../assets/logo2.png';
-
 import '@fontsource/inter/400.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
 const Dashboard = () => {
-
   const navigate = useNavigate();
+  const timerRef = useRef(null);
 
   const [dataSelecionada, setDataSelecionada] = useState(() => {
     const hoje = new Date();
@@ -32,7 +30,6 @@ const Dashboard = () => {
   const [equipe, setEquipe] = useState('');
   const [conferente, setConferente] = useState('');
   const [tempo, setTempo] = useState('00:00:00');
-  const [timerInterval, setTimerInterval] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,7 +40,7 @@ const Dashboard = () => {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-      className: 'toast-aviso-importante', // <- classe customizada
+      className: 'toast-aviso-importante',
     });
   }, []);
 
@@ -52,20 +49,20 @@ const Dashboard = () => {
       try {
         const res = await api.get(`/carregamentos?data=${dataSelecionada}`);
         const placasFormatadas = res.data
-          .filter(item => item.placa && item.placa.trim() !== "") // <-- filtra placas vazias
+          .filter(item => item.placa && item.placa.trim() !== "")
           .map(item => ({
-          id: item._id,
-          idPlaca: item.idPlaca,
-          placa: item.placa,
-          modelo: item.modelo,
-          codigoBarra: item.codigoBarra,
-          status: item.status,
-          equipe: item.equipe || '',
-          conferente: item.conferente || '',
-          horaInicio: item.horaInicio,
-          horaFim: item.horaFim,
-          tempo: item.tempo || '00:00:00'
-        }));
+            id: item._id,
+            idPlaca: item.idPlaca,
+            placa: item.placa,
+            modelo: item.modelo,
+            codigoBarra: item.codigoBarra,
+            status: item.status,
+            equipe: item.equipe || '',
+            conferente: item.conferente || '',
+            horaInicio: item.horaInicio,
+            horaFim: item.horaFim,
+            tempo: item.tempo || '00:00:00'
+          }));
         setPlates(placasFormatadas);
       } catch (err) {
         console.error("Erro ao buscar placas:", err);
@@ -75,6 +72,15 @@ const Dashboard = () => {
     fetchPlates();
   }, [dataSelecionada]);
 
+  useEffect(() => {
+    // Limpar intervalo quando o componente for desmontado
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   const formatarTempo = (segundos) => {
     const h = String(Math.floor(segundos / 3600)).padStart(2, '0');
     const m = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
@@ -83,17 +89,25 @@ const Dashboard = () => {
   };
 
   const iniciarCronometro = (segundosJaDecorridos = 0) => {
+    // Limpar qualquer intervalo existente
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    segundosJaDecorridos = Math.max(0, segundosJaDecorridos); // Garantir que não seja negativo
     const start = Date.now() - segundosJaDecorridos * 1000;
-    const interval = setInterval(() => {
+
+    timerRef.current = setInterval(() => {
       const diff = Math.floor((Date.now() - start) / 1000);
       setTempo(formatarTempo(diff));
     }, 1000);
-    setTimerInterval(interval);
   };
 
   const pararCronometro = () => {
-    clearInterval(timerInterval);
-    setTimerInterval(null);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const handleSelectPlate = (plate) => {
@@ -102,11 +116,31 @@ const Dashboard = () => {
     setConferente(plate.conferente || '');
     pararCronometro();
 
+    // Resetar para 00:00:00 antes de qualquer cálculo
+    setTempo('00:00:00');
+
     if (plate.status === 'Em andamento' && plate.horaInicio) {
-      const inicio = new Date(plate.horaInicio);
-      const diff = Math.floor((Date.now() - new Date(inicio).getTime()) / 1000);
-      setTempo(formatarTempo(diff));
-      iniciarCronometro(diff);
+      try {
+        const inicio = new Date(plate.horaInicio);
+        
+        // Verificar se a data é válida
+        if (isNaN(inicio.getTime())) {
+          throw new Error('Data de início inválida');
+        }
+
+        const diff = Math.floor((Date.now() - inicio.getTime()) / 1000);
+        
+        // Verificação adicional para evitar valores absurdos
+        if (diff > 0 && diff < 86400) { // Máximo de 1 dia (86400 segundos)
+          setTempo(formatarTempo(diff));
+          iniciarCronometro(diff);
+        } else {
+          setTempo('00:00:00');
+        }
+      } catch (error) {
+        console.error("Erro ao calcular tempo:", error);
+        setTempo('00:00:00');
+      }
     } else {
       setTempo(plate.tempo || '00:00:00');
     }
@@ -144,11 +178,9 @@ const Dashboard = () => {
       setPlates(updated);
       setSelectedPlate(atualizado);
 
-      if (atualizado.horaInicio) {
-        const diff = Math.floor((Date.now() - new Date(atualizado.horaInicio).getTime()) / 1000);
-        setTempo(formatarTempo(diff));
-        iniciarCronometro(diff);
-      }
+      // Iniciar o cronômetro do zero
+      setTempo('00:00:00');
+      iniciarCronometro(0);
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       toast.error("❌ Erro ao iniciar o carregamento.");
@@ -205,7 +237,7 @@ const Dashboard = () => {
           />
         </div>
         <button onClick={() => navigate('/consulta')} className="btn-consulta">
-          <strong><FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: "#fff", fontSize: "16px"}} /> Consulta</strong>
+          <strong><FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: "#fff", fontSize: "16px" }} /> Consulta</strong>
         </button>
       </div>
 
