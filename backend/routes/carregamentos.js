@@ -10,23 +10,28 @@ router.get('/', async (req, res) => {
     const { data } = req.query;
     const registrosData = await Carregamento.find({ data });
     
-    if (registrosData.length === 0) {
-      return res.json([]);
-    }
+    // Formatar datas para o frontend
+    const registrosFormatados = registrosData.map(reg => ({
+      ...reg._doc,
+      horaInicio: reg.horaInicio ? DateTime.fromISO(reg.horaInicio).toISO() : null,
+      horaFim: reg.horaFim ? DateTime.fromISO(reg.horaFim).toISO() : null
+    }));
 
-    res.json(registrosData);
+    res.json(registrosFormatados.length === 0 ? [] : registrosFormatados);
   } catch (error) {
     console.error('Erro ao buscar placas:', error);
     res.status(500).json({ erro: 'Erro ao buscar placas' });
   }
 });
 
-// Iniciar carregamento
+// Modifique a rota de iniciar carregamento
 router.put('/:idPlaca/iniciar', async (req, res) => {
   const { idPlaca } = req.params;
   const { equipe, conferente, data } = req.body;
 
   try {
+    const horaInicio = DateTime.now().setZone('America/Sao_Paulo').toISO(); // Ajuste o timezone conforme necessário
+
     const atualizado = await Carregamento.findOneAndUpdate(
       { idPlaca, data },
       {
@@ -34,8 +39,8 @@ router.put('/:idPlaca/iniciar', async (req, res) => {
           status: 'Em andamento',
           equipe,
           conferente,
-          horaInicio: new Date(),
-          updatedAt: new Date()
+          horaInicio, // Agora usando ISO string com timezone
+          updatedAt: DateTime.now().toISO()
         }
       },
       { new: true, upsert: true }
@@ -59,24 +64,26 @@ router.put('/:idPlaca/finalizar', async (req, res) => {
       return res.status(404).json({ erro: 'Registro não encontrado' });
     }
 
-    const horaFim = new Date();
-    // CÁLCULO CORRIGIDO - Parênteses balanceados:
-    const diffSegundos = Math.floor((horaFim - new Date(registro.horaInicio)) / 1000);
+    const horaFim = DateTime.now().setZone('America/Sao_Paulo');
+    const horaInicio = DateTime.fromISO(registro.horaInicio);
+    
+    // Cálculo mais robusto com Luxon
+    const diffSegundos = horaFim.diff(horaInicio, 'seconds').seconds;
 
     const formatarTempo = (segundos) => {
       const horas = String(Math.floor(segundos / 3600)).padStart(2, '0');
       const minutos = String(Math.floor((segundos % 3600) / 60)).padStart(2, '0');
-      const segundosRestantes = String(segundos % 60).padStart(2, '0');
+      const segundosRestantes = String(Math.floor(segundos % 60)).padStart(2, '0');
       return `${horas}:${minutos}:${segundosRestantes}`;
     };
 
     const atualizado = await Carregamento.findOneAndUpdate(
       { idPlaca, data },
       {
-        horaFim,
+        horaFim: horaFim.toISO(),
         status: 'Finalizado',
         tempo: formatarTempo(diffSegundos),
-        updatedAt: new Date()
+        updatedAt: horaFim.toISO()
       },
       { new: true }
     );
