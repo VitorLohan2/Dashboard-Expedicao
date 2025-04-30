@@ -1,5 +1,4 @@
-/// src/components/Dashboard.jsx
-/// src/components/Dashboard.jsx
+// src/components/Dashboard.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlateTable from './PlateTable';
@@ -63,7 +62,22 @@ const Dashboard = () => {
             horaFim: item.horaFim,
             tempo: item.tempo || '00:00:00'
           }));
+        
         setPlates(placasFormatadas);
+
+        // Verificar se a placa anteriormente selecionada ainda existe na nova lista
+        if (selectedPlate) {
+          const placaAtualizada = placasFormatadas.find(p => p.idPlaca === selectedPlate.idPlaca);
+          if (placaAtualizada) {
+            handleSelectPlate(placaAtualizada);
+          } else {
+            setSelectedPlate(null);
+            setTempo('00:00:00');
+            setEquipe('');
+            setConferente('');
+          }
+        }
+
       } catch (err) {
         console.error("Erro ao buscar placas:", err);
         toast.warning("⚠️ Não foi possível carregar placas salvas.");
@@ -73,7 +87,6 @@ const Dashboard = () => {
   }, [dataSelecionada]);
 
   useEffect(() => {
-    // Limpar intervalo quando o componente for desmontado
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -89,12 +102,11 @@ const Dashboard = () => {
   };
 
   const iniciarCronometro = (segundosJaDecorridos = 0) => {
-    // Limpar qualquer intervalo existente
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
-    segundosJaDecorridos = Math.max(0, segundosJaDecorridos); // Garantir que não seja negativo
+    segundosJaDecorridos = Math.max(0, segundosJaDecorridos);
     const start = Date.now() - segundosJaDecorridos * 1000;
 
     timerRef.current = setInterval(() => {
@@ -115,39 +127,37 @@ const Dashboard = () => {
     setEquipe(plate.equipe || '');
     setConferente(plate.conferente || '');
     pararCronometro();
-
-    // Resetar para 00:00:00 antes de qualquer cálculo
     setTempo('00:00:00');
-
+  
     if (plate.status === 'Em andamento' && plate.horaInicio) {
       try {
         const inicio = new Date(plate.horaInicio);
-        
-        // Verificar se a data é válida
-        if (isNaN(inicio.getTime())) {
-          throw new Error('Data de início inválida');
-        }
-
+        if (isNaN(inicio.getTime())) throw new Error('Data inválida de início');
+  
+        const fim = plate.horaFim ? new Date(plate.horaFim) : null;
+        if (fim && isNaN(fim.getTime())) throw new Error('Data inválida de fim');
+  
         const diff = Math.floor((Date.now() - inicio.getTime()) / 1000);
-        
-        // Verificação adicional para evitar valores absurdos
-        if (diff > 0 && diff < 86400) { // Máximo de 1 dia (86400 segundos)
+        if (diff > 0 && diff < 86400) {
           setTempo(formatarTempo(diff));
           iniciarCronometro(diff);
         } else {
           setTempo('00:00:00');
         }
+  
       } catch (error) {
         console.error("Erro ao calcular tempo:", error);
         setTempo('00:00:00');
+        toast.error(`⚠️ Erro: ${error.message}`);
       }
     } else {
       setTempo(plate.tempo || '00:00:00');
     }
   };
+  
 
   const handleStart = async () => {
-    if (!selectedPlate || !equipe || !conferente) {
+    if (!selectedPlate || !equipe.trim() || !conferente.trim()) {
       toast.error("⚠️ Preencha todos os campos antes de iniciar!");
       return;
     }
@@ -166,7 +176,7 @@ const Dashboard = () => {
         data: dataSelecionada
       });
 
-      const atualizado = res.data.carregamento;
+      const atualizado = { ...selectedPlate, ...res.data.carregamento };
 
       if (res.data.alerta) {
         toast.warning("⚠️ Dados dessa placa já existiam e foram sobrescritos!", { className: 'toast-error' });
@@ -174,13 +184,16 @@ const Dashboard = () => {
         toast.success("✅ Carregamento iniciado com sucesso!", { className: 'toast-success' });
       }
 
-      const updated = plates.map(p => p.idPlaca === atualizado.idPlaca ? atualizado : p);
-      setPlates(updated);
-      setSelectedPlate(atualizado);
-
-      // Iniciar o cronômetro do zero
       setTempo('00:00:00');
       iniciarCronometro(0);
+
+      const updatedPlates = plates.map(p =>
+        p.idPlaca === atualizado.idPlaca ? atualizado : p
+      );
+
+      setPlates(updatedPlates);
+      setSelectedPlate(atualizado);
+
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       toast.error("❌ Erro ao iniciar o carregamento.");
@@ -281,4 +294,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

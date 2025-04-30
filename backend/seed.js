@@ -15,7 +15,7 @@ const config = {
     { idPlaca: '03', placa: 'LSE 9F95', modelo: '1016', codigoBarra: 'LSE9F95' },
     { idPlaca: '04', placa: 'KRF 6E12', modelo: '1016', codigoBarra: 'KRF6E12' },
     { idPlaca: '05', placa: 'KPT 1J99', modelo: '1016', codigoBarra: 'KPT1J99' },
-    { idPlaca: '06', placa: 'KRA 5I69', modelo: '1016', codigoBarra: 'KRA5i69' },
+    { idPlaca: '06', placa: 'KRA 5I69', modelo: '1016', codigoBarra: 'KRA5I69' },
     { idPlaca: '07', placa: 'KYH 9D76', modelo: '1016', codigoBarra: 'KYH9D76' },
     { idPlaca: '08', placa: 'LQM 7F74', modelo: '1016', codigoBarra: 'LQM7F74' },
     { idPlaca: '09', placa: 'LUN 4G76', modelo: '1016', codigoBarra: 'LUN4G76' },
@@ -46,9 +46,10 @@ const config = {
     { idPlaca: '34', placa: 'KYV 8101', modelo: '915', codigoBarra: 'KYV8101' },
     { idPlaca: '35', placa: 'KRI 5I29', modelo: '1017', codigoBarra: 'KRI5I29' },
     { idPlaca: '36', placa: 'SRB 2D29', modelo: '1719', codigoBarra: 'SRB2D29' },
-    { idPlaca: '37', placa: 'FG', modelo: 'CAMPOS', codigoBarra: 'FG' }
+    { idPlaca: '37', placa: 'TTE 6J44', modelo: '1016', codigoBarra: 'TTE6J44' },
+    { idPlaca: '38', placa: 'FG', modelo: 'CAMPOS', codigoBarra: 'FG' }
   ],
-  datas: ['2025-04-25', '2025-04-28', '2025-04-29', '2025-04-30', '2025-05-02'], // Adicione quantas datas precisar
+  datas: ['2025-04-25'], // Adicione quantas datas precisar
   statusPadrao: 'Não iniciado'
 };
 

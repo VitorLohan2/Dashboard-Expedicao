@@ -21,14 +21,19 @@ const Consulta = () => {
   const navigate = useNavigate();
 
   const formatarHorario = (isoString) => {
-    if (!isoString) return '';
-    const data = new Date(isoString);
-    return data.toLocaleString('pt-BR', {
-      timeZone: 'America/Sao_Paulo',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
+    if (!isoString) return '-'; // retorno padrão
+    try {
+      const data = new Date(isoString);
+      if (isNaN(data.getTime())) return '-';
+      return data.toLocaleString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch {
+      return '-';
+    }
   };
 
   const gerarPDF = () => {

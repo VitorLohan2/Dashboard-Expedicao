@@ -30,8 +30,14 @@ const carregamentoSchema = new mongoose.Schema({
   },
   equipe: String,
   conferente: String,
-  horaInicio: Date,
-  horaFim: Date,
+  horaInicio: {
+    type: Date,  // Armazenar como string ISO 8601
+    required: false
+  },
+  horaFim: {
+    type: Date,  // Armazenar como string ISO 8601
+    required: false
+  },
   tempo: String
 }, {
   timestamps: true
@@ -40,4 +46,6 @@ const carregamentoSchema = new mongoose.Schema({
 carregamentoSchema.index({ idPlaca: 1, data: 1 }, { unique: true }); // placa única por data
 
 module.exports = mongoose.model('Carregamento', carregamentoSchema);
+
+
 
