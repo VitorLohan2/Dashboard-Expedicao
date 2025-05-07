@@ -133,6 +133,13 @@ label {
   
 }
 
+/* EFEITO LISTA */
+.efectlist td.horario-destaque {
+  color: red;
+  background-color: #ffdddd;
+  font-weight: bold;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .filtro-data {

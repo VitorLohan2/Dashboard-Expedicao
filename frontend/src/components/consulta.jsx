@@ -37,59 +37,92 @@ const Consulta = () => {
     }
   };
 
+  //RELATÓRIO PDF FUNÇÃO
   const gerarPDF = () => {
     if (carregamentos.length === 0) {
       alert("Nenhum carregamento finalizado para gerar relatório.");
       return;
     }
   
-    const doc = new jsPDF();    //RELATÓRIO PDF
+    const doc = new jsPDF();
   
+    // Função corrigida para verificar horários
+    const isHorarioDestaque = (horario) => {
+      try {
+        // Verifica se é string e tem formato de horário
+        if (typeof horario !== 'string' || !horario.includes(':')) return false;
+        
+        const [horaStr] = horario.split(':');
+        const hora = parseInt(horaStr, 10);
+        
+        // Verifica se é número válido
+        if (isNaN(hora)) return false;
+        
+        return (hora >= 0 && hora < 4) || (hora >= 8 && hora < 12);
+      } catch {
+        return false;
+      }
+    };
+  
+    // Restante do cabeçalho permanece igual
     doc.setFontSize(16);
     doc.text('Relatório de Carregamentos Finalizados', 14, 20);
     doc.setFontSize(12);
     doc.text(`Data: ${data}`, 14, 28);
     doc.text(`Tempo Total: ${tempoTotal}`, 14, 35);
   
-    // Adicionando as informações gerais ao PDF
+    // Informações Gerais (mantido igual)
     if (infoGerais) {
       const startY = 45;
-      const colWidth = 45; // Largura de cada coluna
+      const colWidth = 45;
       
       doc.setFontSize(12);
       doc.text('Informações Gerais:', 14, startY);
-      
-      // Desenha um retângulo de fundo para destacar
       doc.setFillColor(240, 240, 240);
       doc.rect(14, startY + 2, 180, 10, 'F');
-      
-      // Texto em negrito
       doc.setFont(undefined, 'bold');
-      
-      // Posicionamento das colunas
       doc.text(`Pedidos: ${infoGerais.totalPedidos || '-'}`, 16, startY + 8);
       doc.text(`Zona 1: ${infoGerais.confZonas || '-'}`, 5 + colWidth, startY + 8);
       doc.text(`Carregamento: ${infoGerais.zonaum || '-'}`, -5 + colWidth * 2, startY + 8);
       doc.text(`Carregamento Manhã: ${infoGerais.carregmanha || '-'}`, 0 + colWidth * 3, startY + 8);
-      
-      // Volta ao normal
       doc.setFont(undefined, 'normal');
     }
-
-    const tableData = carregamentos.map(item => ([
-      item.placa,
-      item.modelo || '-',
-      item.equipe || '-',
-      item.conferente || '-',
-      formatarHorario(item.horaInicio),
-      formatarHorario(item.horaFim),
-      item.tempo || '-'
-    ]));
+  
+    // Tabela com tratamento seguro dos horários
+    const tableData = carregamentos.map(item => {
+      const inicioFormatado = formatarHorario(item.horaInicio) || '-';
+      const fimFormatado = formatarHorario(item.horaFim) || '-';
+      
+      return [
+        item.placa,
+        item.modelo || '-',
+        item.equipe || '-',
+        item.conferente || '-',
+        inicioFormatado,
+        fimFormatado,
+        item.tempo || '-'
+      ];
+    });
   
     autoTable(doc, {
       startY: infoGerais ? 60 : 45,
       head: [['Placa', 'Modelo', 'Equipe', 'Conferente', 'Início', 'Fim', 'Tempo']],
       body: tableData,
+      didDrawCell: (data) => {
+        if (data.column.index === 4 || data.column.index === 5) {
+          try {
+            const horario = data.cell.text[0]; // Acessa o texto da célula corretamente
+            if (isHorarioDestaque(horario)) {
+              doc.setFillColor(255, 200, 200);
+              doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+              doc.setTextColor(255, 0, 0);
+              doc.text(horario, data.cell.x + 2, data.cell.y + 5);
+            }
+          } catch (e) {
+            console.error("Erro ao processar horário:", e);
+          }
+        }
+      }
     });
   
     doc.save(`relatorio_carregamentos_${data}.pdf`);
@@ -164,7 +197,7 @@ const Consulta = () => {
         <h3>📋 Informações Gerais da Expedição</h3>
         <ul>
           <li><strong>Total de Pedidos:</strong> {infoGerais.totalPedidos || '-'}</li>
-          <li><strong>Zona 1 (Conferencia):</strong> {infoGerais.confZonas || '-'}</li>
+          <li><strong>Zona 1 (Conferência):</strong> {infoGerais.confZonas || '-'}</li>
           <li><strong>Carregamento:</strong> {infoGerais.zonaum || '-'}</li>
           <li><strong>Carregamento Manhã:</strong> {infoGerais.carregmanha || '-'}</li>
         </ul>
@@ -184,18 +217,28 @@ const Consulta = () => {
           </tr>
         </thead>
         <tbody className="efectlist">
-          {carregamentos.map((item, index) => (
-            <tr key={index}>
-              <td><strong>{item.placa}</strong></td>
-              <td>{item.modelo}</td>
-              <td>{item.equipe}</td>
-              <td>{item.conferente}</td>
-              <td>{formatarHorario(item.horaInicio)}</td>
-              <td>{formatarHorario(item.horaFim)}</td>
-              <td>{item.tempo}</td>
-            </tr>
-          ))}
-        </tbody>
+  {carregamentos.map((item, index) => {
+    const inicio = formatarHorario(item.horaInicio);
+    const fim = formatarHorario(item.horaFim);
+    const horaInicio = inicio ? parseInt(inicio.split(':')[0], 10) : null;
+    const horaFim = fim ? parseInt(fim.split(':')[0], 10) : null;
+    
+    const destaqueInicio = horaInicio !== null && ((horaInicio >= 0 && horaInicio < 4) || (horaInicio >= 8 && horaInicio < 12));
+    const destaqueFim = horaFim !== null && ((horaFim >= 0 && horaFim < 4) || (horaFim >= 8 && horaFim < 12));
+    
+    return (
+      <tr key={index}>
+        <td><strong>{item.placa}</strong></td>
+        <td>{item.modelo}</td>
+        <td>{item.equipe}</td>
+        <td>{item.conferente}</td>
+        <td className={destaqueInicio ? 'horario-destaque' : ''}>{inicio}</td>
+        <td className={destaqueFim ? 'horario-destaque' : ''}>{fim}</td>
+        <td>{item.tempo}</td>
+      </tr>
+    );
+  })}
+</tbody>
       </table>
     </div>
   );
