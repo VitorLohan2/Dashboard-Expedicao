@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
+import InformacoesForm from "../components/InformacoesForm";
 import axios from 'axios';
 import api from '../services/api';
 import '../App.css';
@@ -30,6 +31,11 @@ const Dashboard = () => {
   const [conferente, setConferente] = useState('');
   const [tempo, setTempo] = useState('00:00:00');
   const [loading, setLoading] = useState(false);
+  const [totalPedidos, settotalPedidos] = useState('');
+  const [confZonas, setconfZonas] = useState('');
+  const [zonaum, setzonaum] = useState('');
+  const [termino, settermino] = useState('');
+  const [termino2, settermino2] = useState('');
 
   useEffect(() => {
     toast.info('⚠️ Atenção: Confira a data selecionada antes de iniciar os carregamentos.', {
@@ -249,11 +255,19 @@ const Dashboard = () => {
             onChange={(e) => setDataSelecionada(e.target.value)}
           />
         </div>
-        <button onClick={() => navigate('/consulta')} className="btn-consulta">
-          <strong><FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: "#fff", fontSize: "16px" }} /> Consulta</strong>
+        <button 
+        className="btn-consulta" 
+        onClick={() => navigate('/consulta')}>
+        <span className="text">Consulta</span>
+        <span className="icon-wrapper">
+        <FontAwesomeIcon icon={faMagnifyingGlass} />
+        </span>
         </button>
       </div>
-
+      <InformacoesForm
+      selectedPlate={selectedPlate}
+      dataSelecionada={dataSelecionada}
+      />
       <PlateTable
         plates={plates}
         selectedPlate={selectedPlate}
