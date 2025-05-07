@@ -235,20 +235,46 @@ label {
 }
 
 .btn-consulta {
-  padding: 0.6rem 1.2rem;
-  margin-top: 10px;
+  display: flex;
+  align-items: center;
   border: none;
-  border-radius: 10px;
-  background-color: #000;
-  color: #fff;
+  border-radius: 5px;
+  overflow: hidden;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.5s ease;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000;
+  background-color: #0f9954;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+.btn-consulta .text {
+  padding: 10px 20px;
+  background-color: #1061da;
+  color: #fff;
+  font-weight: bold;
 }
 
-.btn-consulta:hover {
+.btn-consulta .icon-wrapper {
   background-color: #000;
-  box-shadow: 0 0 5px #777, 0 0 5px #777, 0 0 5px #777;
+    color: #fff;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-consulta:hover .icon-wrapper {
+  background-color: #1061da;
+}
+.btn-consulta:hover .text {
+  background-color: #000;    
+}
+
+.btn-consulta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .iniciar{

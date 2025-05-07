@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Consulta.css';
+import '../Consulta.css';
 import api from '../services/api'; //Servidor
 
 import jsPDF from 'jspdf';
@@ -18,6 +18,7 @@ const Consulta = () => {
   const [data, setData] = useState('');
   const [carregamentos, setCarregamentos] = useState([]);
   const [tempoTotal, setTempoTotal] = useState('');
+  const [infoGerais, setInfoGerais] = useState(null);
   const navigate = useNavigate();
 
   const formatarHorario = (isoString) => {
@@ -50,6 +51,31 @@ const Consulta = () => {
     doc.text(`Data: ${data}`, 14, 28);
     doc.text(`Tempo Total: ${tempoTotal}`, 14, 35);
   
+    // Adicionando as informações gerais ao PDF
+    if (infoGerais) {
+      const startY = 45;
+      const colWidth = 45; // Largura de cada coluna
+      
+      doc.setFontSize(12);
+      doc.text('Informações Gerais:', 14, startY);
+      
+      // Desenha um retângulo de fundo para destacar
+      doc.setFillColor(240, 240, 240);
+      doc.rect(14, startY + 2, 180, 10, 'F');
+      
+      // Texto em negrito
+      doc.setFont(undefined, 'bold');
+      
+      // Posicionamento das colunas
+      doc.text(`Pedidos: ${infoGerais.totalPedidos || '-'}`, 16, startY + 8);
+      doc.text(`Zona 1: ${infoGerais.confZonas || '-'}`, 5 + colWidth, startY + 8);
+      doc.text(`Carregamento: ${infoGerais.zonaum || '-'}`, -5 + colWidth * 2, startY + 8);
+      doc.text(`Carregamento Manhã: ${infoGerais.carregmanha || '-'}`, 0 + colWidth * 3, startY + 8);
+      
+      // Volta ao normal
+      doc.setFont(undefined, 'normal');
+    }
+
     const tableData = carregamentos.map(item => ([
       item.placa,
       item.modelo || '-',
@@ -61,7 +87,7 @@ const Consulta = () => {
     ]));
   
     autoTable(doc, {
-      startY: 45,
+      startY: infoGerais ? 60 : 45,
       head: [['Placa', 'Modelo', 'Equipe', 'Conferente', 'Início', 'Fim', 'Tempo']],
       body: tableData,
     });
@@ -93,8 +119,14 @@ const Consulta = () => {
       const segundos = totalSegundos % 60;
 
       setTempoTotal(`${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`);
+      
+      // Buscar informações gerais
+      const infoRes = await api.get(`/informacoes-gerais/${data}`);
+      setInfoGerais(infoRes.data);
+    
     } catch (error) {
       console.error("Erro ao buscar dados:", error);
+      setInfoGerais(null); // Limpa caso não haja
     }
   };
 
@@ -126,6 +158,17 @@ const Consulta = () => {
         <div className="tempo-total-destaque">
           ⏱️ <strong>Tempo Total do Dia:</strong> {tempoTotal}
         </div>
+      )}
+      {infoGerais && (
+      <div className="info-gerais-container">
+        <h3>📋 Informações Gerais da Expedição</h3>
+        <ul>
+          <li><strong>Total de Pedidos:</strong> {infoGerais.totalPedidos || '-'}</li>
+          <li><strong>Zona 1 (Conferencia):</strong> {infoGerais.confZonas || '-'}</li>
+          <li><strong>Carregamento:</strong> {infoGerais.zonaum || '-'}</li>
+          <li><strong>Carregamento Manhã:</strong> {infoGerais.carregmanha || '-'}</li>
+        </ul>
+      </div>
       )}
 
       <table>

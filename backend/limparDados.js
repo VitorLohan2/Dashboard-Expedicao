@@ -13,7 +13,7 @@ async function limparDados() {
     
     // 1. Limpar por datas específicas
     await Carregamento.deleteMany({ 
-      data: { $in: ['2025-04-25', '2025-04-28', '2025-04-29', '2025-04-30', '2025-05-02'] } 
+      data: { $in: ['2025-05-02'] } 
     });
     
     // 2. Limpar por status
