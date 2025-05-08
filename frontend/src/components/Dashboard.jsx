@@ -238,6 +238,14 @@ const Dashboard = () => {
     }
   };
 
+  const handlePause = () => {
+    toast.info('☢️ [ATENÇÃO] FUNÇÃO EM DESENVOLVIMENTO‼️', {
+      className: 'toast-aviso',
+      position: 'top-center',
+      autoClose: 3000,
+    });
+  };
+
   return (
     <div className="container">
       <div className="logo-wrapper">
@@ -287,6 +295,8 @@ const Dashboard = () => {
           <Actions
             onStart={handleStart}
             onFinish={handleFinish}
+            onPause={handlePause}
+            isPaused={false} // ou controle esse estado no futuro
             loading={loading}
           />
         </>
