@@ -7,9 +7,9 @@ import api from '../services/api'; //Servidor
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-import { faArrowLeft, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faDownload, faTruckFront, faClipboard } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 import '@fontsource/inter/400.css';
 
 import lupaImg from '../assets/lupa.png';
@@ -19,6 +19,7 @@ const Consulta = () => {
   const [carregamentos, setCarregamentos] = useState([]);
   const [tempoTotal, setTempoTotal] = useState('');
   const [infoGerais, setInfoGerais] = useState(null);
+  const [contagemConferentes, setContagemConferentes] = useState({});
   const navigate = useNavigate();
 
   const formatarHorario = (isoString) => {
@@ -37,7 +38,6 @@ const Consulta = () => {
     }
   };
 
-  //RELATÓRIO PDF FUNÇÃO
   const gerarPDF = () => {
     if (carregamentos.length === 0) {
       alert("Nenhum carregamento finalizado para gerar relatório.");
@@ -70,10 +70,11 @@ const Consulta = () => {
     doc.setFontSize(12);
     doc.text(`Data: ${data}`, 14, 28);
     doc.text(`Tempo Total: ${tempoTotal}`, 14, 35);
-  
+    doc.text(`Total de Caminhões: ${carregamentos.length}`, 14, 42);
+
     // Informações Gerais (mantido igual)
     if (infoGerais) {
-      const startY = 45;
+      const startY = 52;
       const colWidth = 45;
       
       doc.setFontSize(12);
@@ -105,7 +106,7 @@ const Consulta = () => {
     });
   
     autoTable(doc, {
-      startY: infoGerais ? 60 : 45,
+      startY: infoGerais ? 70 : 45,
       head: [['Placa', 'Modelo', 'Equipe', 'Conferente', 'Início', 'Fim', 'Tempo']],
       body: tableData,
       didDrawCell: (data) => {
@@ -128,16 +129,24 @@ const Consulta = () => {
     doc.save(`relatorio_carregamentos_${data}.pdf`);
   };
   
-  
   const buscarCarregamentos = async () => {
     if (!data) return alert("Selecione uma data!");
 
     try {
-      const response = await api.get(`/carregamentos?data=${data}`); //`http://localhost:3001/carregamentos?data=${data}`
+      const response = await api.get(`/carregamentos?data=${data}`);
       const finalizados = response.data.filter(item => item.status === "Finalizado");
 
       finalizados.sort((a, b) => new Date(a.horaInicio) - new Date(b.horaInicio));
       setCarregamentos(finalizados);
+      
+      // Calcular contagem por conferente
+      const contagem = finalizados.reduce((acc, item) => {
+        const conferente = item.conferente || 'Sem conferente';
+        acc[conferente] = (acc[conferente] || 0) + 1;
+        return acc;
+      }, {});
+      
+      setContagemConferentes(contagem);
 
       // Calcular tempo total
       const totalSegundos = finalizados.reduce((total, item) => {
@@ -184,7 +193,6 @@ const Consulta = () => {
         <button className="btn-relatorio" onClick={gerarPDF}>
         <strong><FontAwesomeIcon icon={faDownload} style={{ color: "#000", fontSize: "13px" }} /> Relatório</strong>
         </button>
-
       </div>
 
       {tempoTotal && (
@@ -192,16 +200,32 @@ const Consulta = () => {
           ⏱️ <strong>Tempo Total do Dia:</strong> {tempoTotal}
         </div>
       )}
+      
       {infoGerais && (
-      <div className="info-gerais-container">
-        <h3>📋 Informações Gerais da Expedição</h3>
-        <ul>
-          <li><strong>Total de Pedidos:</strong> {infoGerais.totalPedidos || '-'}</li>
-          <li><strong>Zona 1 (Conferência):</strong> {infoGerais.confZonas || '-'}</li>
-          <li><strong>Carregamento:</strong> {infoGerais.zonaum || '-'}</li>
-          <li><strong>Carregamento Manhã:</strong> {infoGerais.carregmanha || '-'}</li>
-        </ul>
-      </div>
+ <div className="info-gerais-container">
+ <h3><FontAwesomeIcon icon={faClipboard}></FontAwesomeIcon>Informações Gerais da Expedição</h3>
+ <div className="info-gerais-linha">
+   <div className="info-item">Total de Pedidos: <strong>{infoGerais.totalPedidos || '-'}</strong></div>
+   <div className="info-item">Zona 1 (Conferência): {infoGerais.confZonas || '-'}</div>
+   <div className="info-item">Carregamento: {infoGerais.zonaum || '-'}</div>
+   <div className="info-item">Carregamento Manhã: {infoGerais.carregmanha || '-'}</div>
+   <div className="info-item">Total de Caminhões: <strong>{carregamentos.length}</strong></div>
+ </div>
+</div>
+      )}
+
+      {Object.keys(contagemConferentes).length > 0 && (
+        <div className="contagem-conferentes">
+          <h3><FontAwesomeIcon icon={faTruckFront}></FontAwesomeIcon> Caminhões por Conferente</h3>
+          <div className="conferentes-grid">
+            {Object.entries(contagemConferentes).map(([conferente, quantidade]) => (
+              <div key={conferente} className="conferente-item">
+                <span className="conferente-nome">{conferente}:</span>
+                <span className="conferente-quantidade">{quantidade}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       <table>
@@ -217,28 +241,28 @@ const Consulta = () => {
           </tr>
         </thead>
         <tbody className="efectlist">
-  {carregamentos.map((item, index) => {
-    const inicio = formatarHorario(item.horaInicio);
-    const fim = formatarHorario(item.horaFim);
-    const horaInicio = inicio ? parseInt(inicio.split(':')[0], 10) : null;
-    const horaFim = fim ? parseInt(fim.split(':')[0], 10) : null;
-    
-    const destaqueInicio = horaInicio !== null && ((horaInicio >= 0 && horaInicio < 4) || (horaInicio >= 8 && horaInicio < 12));
-    const destaqueFim = horaFim !== null && ((horaFim >= 0 && horaFim < 4) || (horaFim >= 8 && horaFim < 12));
-    
-    return (
-      <tr key={index}>
-        <td><strong>{item.placa}</strong></td>
-        <td>{item.modelo}</td>
-        <td>{item.equipe}</td>
-        <td>{item.conferente}</td>
-        <td className={destaqueInicio ? 'horario-destaque' : ''}>{inicio}</td>
-        <td className={destaqueFim ? 'horario-destaque' : ''}>{fim}</td>
-        <td>{item.tempo}</td>
-      </tr>
-    );
-  })}
-</tbody>
+          {carregamentos.map((item, index) => {
+            const inicio = formatarHorario(item.horaInicio);
+            const fim = formatarHorario(item.horaFim);
+            const horaInicio = inicio ? parseInt(inicio.split(':')[0], 10) : null;
+            const horaFim = fim ? parseInt(fim.split(':')[0], 10) : null;
+            
+            const destaqueInicio = horaInicio !== null && ((horaInicio >= 0 && horaInicio < 4) || (horaInicio >= 8 && horaInicio < 12));
+            const destaqueFim = horaFim !== null && ((horaFim >= 0 && horaFim < 4) || (horaFim >= 8 && horaFim < 12));
+            
+            return (
+              <tr key={index}>
+                <td><strong>{item.placa}</strong></td>
+                <td>{item.modelo}</td>
+                <td>{item.equipe}</td>
+                <td>{item.conferente}</td>
+                <td className={destaqueInicio ? 'horario-destaque' : ''}>{inicio}</td>
+                <td className={destaqueFim ? 'horario-destaque' : ''}>{fim}</td>
+                <td>{item.tempo}</td>
+              </tr>
+            );
+          })}
+        </tbody>
       </table>
     </div>
   );
