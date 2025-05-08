@@ -289,6 +289,12 @@ label {
 .finalizar:hover{
   background-color: #777;
 }
+.pausar {                       /**/
+  background-color: #000;
+}
+.pausar:hover {
+  background-color: #777;
+}
 
 /* useEffect ~ NOTIFICAÇÃO */
 .toast-aviso-importante {
