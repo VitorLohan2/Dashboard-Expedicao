@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';   // No seu handleLogin, adicione navegação após login bem-sucedido
 import logo from '../assets/logo2.png';
+import api from '../services/api';
 
 function Login({ onLogin }) {
   const [usuario, setUsuario] = useState('');
@@ -11,7 +11,7 @@ function Login({ onLogin }) {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:3001/api/login', { usuario, senha });
+      const res = await api.post('/api/login', { usuario, senha });
 
        console.log('Dados recebidos:', res.data); // Verifique se o nome está vindo
 
