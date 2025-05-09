@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';   // No seu handleLogin, adicione navegação após login bem-sucedido
 import logo from '../assets/logo2.png';
-import api from '../services/api';
+import api from '../services/api'; /* SERVICE */
 
 function Login({ onLogin }) {
   const [usuario, setUsuario] = useState('');
