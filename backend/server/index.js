@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const carregamentoRoutes = require('../routes/carregamentos');
 const informacoesGeraisRoutes = require('../routes/informacoesGerais');
+const authRoutes = require('../routes/auth');
 
 const app = express();
 const port = process.env.PORT || 3001; // Alterado de 5000 para 3001
@@ -26,7 +27,7 @@ app.use(bodyParser.json());
 // Rotas
 app.use('/carregamentos', carregamentoRoutes);
 app.use('/informacoes-gerais', informacoesGeraisRoutes);
-
+app.use('/api', authRoutes)
 
 // Iniciar servidor
 app.listen(port, () => {

@@ -187,7 +187,7 @@ const Consulta = () => {
           onChange={(e) => setData(e.target.value)}
         />
         <button onClick={buscarCarregamentos}><strong>Buscar</strong></button>
-        <button className="btn-voltar" onClick={() => navigate('/')}>
+        <button className="btn-voltar" onClick={() => navigate('/dashboard')}>
           <strong><FontAwesomeIcon icon={faArrowLeft} style={{ color: "#fff", fontSize: "13px" }} /> Voltar</strong>
         </button>
         <button className="btn-relatorio" onClick={gerarPDF}>
