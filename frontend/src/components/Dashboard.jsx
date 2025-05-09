@@ -5,7 +5,6 @@ import PlateTable from './PlateTable';
 import PlateDetails from './PlateDetails';
 import Actions from './Actions';
 import InformacoesForm from "../components/InformacoesForm";
-import axios from 'axios';
 import api from '../services/api';
 import '../App.css';
 import { ToastContainer, toast } from 'react-toastify';
@@ -15,8 +14,9 @@ import logo from '../assets/logo2.png';
 import '@fontsource/inter/400.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 
-const Dashboard = () => {
+const Dashboard = ({ usuario }) => {
   const navigate = useNavigate();
   const timerRef = useRef(null);
 
@@ -25,6 +25,33 @@ const Dashboard = () => {
     return new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000).toISOString().split('T')[0];
   });
 
+  // Recupera os dados do usuário do localStorage se necessário
+  const userData = JSON.parse(localStorage.getItem('userData')) || usuario;
+  const nomeExibicao = userData?.nome || 'Usuário';
+
+
+  const handleLogout = () => {
+  // 1. Limpeza dos dados de autenticação
+  localStorage.removeItem('userData'); // Remove dados do usuário
+  sessionStorage.clear(); // Limpa sessionStorage
+
+  // 2. Limpeza do cache do navegador
+  if (window.caches) {
+    caches.keys().then(names => {
+      names.forEach(name => caches.delete(name));
+    });
+  }
+
+  // 3. Redirecionamento seguro
+  navigate('/', { 
+    replace: true, // Substitui no histórico
+    state: { from: 'logout' } // Estado adicional
+  });
+
+  // 4. Força recarregamento para limpar estado da aplicação
+  window.location.reload();
+};
+
   const [plates, setPlates] = useState([]);
   const [selectedPlate, setSelectedPlate] = useState(null);
   const [equipe, setEquipe] = useState('');
@@ -32,7 +59,7 @@ const Dashboard = () => {
   const [tempo, setTempo] = useState('00:00:00');
   const [loading, setLoading] = useState(false);
   const [totalPedidos, settotalPedidos] = useState('');
-  const [confZonas, setconfZonas] = useState('');
+  const [confZonas, setconfZonas] = useState(''); /**/
   const [zonaum, setzonaum] = useState('');
   const [termino, settermino] = useState('');
   const [termino2, settermino2] = useState('');
@@ -90,7 +117,7 @@ const Dashboard = () => {
       }
     };
     fetchPlates();
-  }, [dataSelecionada]);
+  }, [dataSelecionada, selectedPlate?.idPlaca]);
 
   useEffect(() => {
     return () => {
@@ -248,6 +275,24 @@ const Dashboard = () => {
 
   return (
     <div className="container">
+      {/* Container do usuário e botão de sair */}
+      {usuario && (
+        <div className="user-controls">
+          <div className="status-container">
+            <span className="status-dot"></span>
+            <span className="status-text">{nomeExibicao}</span>
+            <span className="status-text">Online</span>
+          </div>
+          <button 
+          className="logout-button"
+          onClick={handleLogout}
+          title="Sair do sistema"
+          >
+          <FontAwesomeIcon icon={faSignOutAlt} />
+        </button>
+        </div>
+      )}
+    
       <div className="logo-wrapper">
         <img src={logo} alt="Logo da Empresa" className="logo" />
       </div>
