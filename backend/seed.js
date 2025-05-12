@@ -49,7 +49,7 @@ const config = {
     { idPlaca: '37', placa: 'TTE 6J44', modelo: '1016', codigoBarra: 'TTE6J44' },
     { idPlaca: '38', placa: 'FG', modelo: 'CAMPOS', codigoBarra: 'FG' }
   ],
-  datas: ['2025-04-25', '2025-05-07', '2025-05-08', '2025-05-09'], // Adicione quantas datas precisar
+  datas: ['2025-05-12', '2025-05-13', '2025-05-14', '2025-05-15', '2025-05-16'], // Adicione quantas datas precisar
   statusPadrao: 'Não iniciado'
 };
 
