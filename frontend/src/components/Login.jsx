@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';   // No seu handleLogin, adicione navegação após login bem-sucedido
 import logo from '../assets/logo2.png';
 import api from '../services/api'; /* SERVICE */
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDiscord } from '@fortawesome/free-brands-svg-icons';
+import { faEnvelope } from '@fortawesome/free-solid-svg-icons';
 function Login({ onLogin }) {
   const [usuario, setUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const handleLogin = async () => {
     try {
@@ -75,7 +77,16 @@ function Login({ onLogin }) {
         
         {erro && <p className="error-message">{erro}</p>}
         
-        <p className="design-credit">Sistema de Carregamento</p>
+        <p className="design-credit">-------------------- OUTROS --------------------</p>
+        <div className="outros-button">
+        <button className="login-suporte">
+          <a href="https://app.pipefy.com/public/form/bW97ceGx" target="_blank" rel="noopener noreferrer" className="a-suporte">
+          <FontAwesomeIcon icon={faEnvelope} /> SUPORTE</a>
+        </button>
+        <button className="login-discord"><a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="b-suporte">
+          <FontAwesomeIcon icon={faDiscord} size="lg"/> DISCORD</a>
+        </button>
+        </div>
       </div>
     </div>
   );
