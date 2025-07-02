@@ -100,7 +100,7 @@ function Login({ onLogin }) {
         <p className="design-credit">-------------------- OUTROS --------------------</p>
         <div className="outros-button">
           <button className="login-suporte">
-            <a href="https://app.pipefy.com/public/form/bW97ceGx" target="_blank" rel="noopener noreferrer" className="a-suporte">
+            <a href="https://google.com" target="_blank" rel="noopener noreferrer" className="a-suporte">
               <FontAwesomeIcon icon={faEnvelope} /> SUPORTE
             </a>
           </button>
