@@ -39,7 +39,7 @@ const PlateDetails = ({ selectedPlate, equipe, setEquipe, conferente, setConfere
         <label>Conferente:</label>
         <select value={conferente} onChange={(e) => setConferente(e.target.value)}>
           <option value="">Selecione</option>
-          {["Renan", "Fellippe", "Lopes", "Alamir", "Douglas", "Lucas", "Robson", "Luis", "Couto", "Camargo", "Jeferson", "Aruan", "Tavares", "Jhonath"].map(name => (
+          {["Renan", "Fellippe", "Lopes", "Alamir", "Douglas", "Lucas", "Robson", "Luis", "Couto", "Camargo", "Jeferson", "Aruan", "Tavares", "Jhonath", "Washington"].map(name => (
             <option key={name} value={name}>{name}</option>
           ))}
         </select>
