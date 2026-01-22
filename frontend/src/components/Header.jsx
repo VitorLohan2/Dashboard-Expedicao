@@ -9,7 +9,7 @@ const Header = () => {
     <header className="app-header">
       <div className="header-brand">
         <FontAwesomeIcon icon={faTruckFast} className="header-icon" />
-        <span className="header-title">DIME - Expedição</span>
+        <span className="header-title">DIME -Expedição</span>
       </div>
     </header>
   );
