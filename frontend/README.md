@@ -1,43 +1,80 @@
-# Getting Started with Create React App
+# Dashboard de Expedição - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Sistema de gerenciamento de carregamentos de expedição.
 
-## Available Scripts
+## 📁 Estrutura do Projeto
 
-In the project directory, you can run:
+```
+frontend/
+├── public/                 # Arquivos públicos estáticos
+├── src/
+│   ├── assets/            # Imagens e recursos estáticos
+│   ├── components/        # Componentes reutilizáveis
+│   │   ├── Actions.jsx    # Botões de ação (iniciar, finalizar, pausar)
+│   │   ├── Header.jsx     # Cabeçalho com logo
+│   │   ├── InformacoesForm.jsx # Formulário de informações gerais
+│   │   ├── PlateDetails.jsx    # Detalhes da placa selecionada
+│   │   ├── PlateTable.jsx      # Tabela de placas
+│   │   └── StatusMessage.jsx   # Componente de mensagens
+│   ├── pages/             # Páginas/Views da aplicação
+│   │   ├── Dashboard.jsx  # Página principal
+│   │   ├── Consulta.jsx   # Página de consulta de carregamentos
+│   │   └── Placas.jsx     # Página de gerenciamento de placas
+│   ├── services/          # Serviços e APIs
+│   │   └── api.js         # Configuração do Axios
+│   ├── styles/            # Arquivos de estilo CSS
+│   │   ├── variables.css  # Design System (cores, fontes, espaçamentos)
+│   │   ├── Dashboard.css
+│   │   ├── Consulta.css
+│   │   ├── Placas.css
+│   │   └── ...
+│   ├── utils/             # Funções utilitárias
+│   │   └── timeUtils.js   # Funções para manipulação de tempo
+│   ├── App.jsx            # Componente raiz com rotas
+│   ├── index.js           # Ponto de entrada
+│   └── index.css          # Estilos globais
+└── package.json
+```
 
-### `npm start`
+## 🚀 Como Executar
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+# Instalar dependências
+npm install
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+# Iniciar em desenvolvimento
+npm start
 
-### `npm test`
+# Build para produção
+npm run build
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📱 Responsividade
 
-### `npm run build`
+O sistema é totalmente responsivo, adaptando-se a:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Desktop (> 1024px)
+- Tablet (768px - 1024px)
+- Mobile (< 768px)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🎨 Design System
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+O projeto utiliza um design system profissional com:
 
-### `npm run eject`
+- Paleta de cores consistente (azul primário)
+- Tipografia Inter
+- Espaçamentos padronizados
+- Sombras e bordas arredondadas
+- Transições suaves
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🔧 Tecnologias
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- React 19
+- React Router DOM
+- Axios
+- FontAwesome Icons
+- jsPDF (geração de relatórios)
+- JsBarcode
 
 ## Learn More
 

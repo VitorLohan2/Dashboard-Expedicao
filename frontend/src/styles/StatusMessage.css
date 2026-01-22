@@ -1,0 +1,95 @@
+/* StatusMessage.css */
+
+.status-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.status-icon {
+  font-size: var(--font-lg);
+  flex-shrink: 0;
+}
+
+.status-text {
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+}
+
+.status-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  opacity: 0.7;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-close:hover {
+  opacity: 1;
+}
+
+/* Tipos de mensagem */
+.status-success {
+  background: var(--success-50);
+  border: 1px solid var(--success-200);
+  color: var(--success-700);
+}
+
+.status-success .status-close {
+  color: var(--success-700);
+}
+
+.status-error {
+  background: var(--danger-50);
+  border: 1px solid var(--danger-200);
+  color: var(--danger-700);
+}
+
+.status-error .status-close {
+  color: var(--danger-700);
+}
+
+.status-warning {
+  background: var(--warning-50);
+  border: 1px solid var(--warning-200);
+  color: var(--warning-700);
+}
+
+.status-warning .status-close {
+  color: var(--warning-700);
+}
+
+.status-info {
+  background: var(--primary-50);
+  border: 1px solid var(--primary-200);
+  color: var(--primary-700);
+}
+
+.status-info .status-close {
+  color: var(--primary-700);
+}

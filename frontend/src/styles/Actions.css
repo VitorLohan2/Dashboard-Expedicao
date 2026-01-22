@@ -1,0 +1,74 @@
+/* Actions.css - Professional Design */
+
+.actions-container {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--gray-200);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-base);
+  font-weight: var(--font-semibold);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  flex: 1;
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn svg {
+  font-size: var(--font-lg);
+}
+
+/* Botão Iniciar */
+.action-start {
+  background: var(--success-600);
+  color: var(--white);
+}
+
+.action-start:hover:not(:disabled) {
+  background: var(--success-700);
+}
+
+/* Botão Finalizar */
+.action-finish {
+  background: var(--primary-600);
+  color: var(--white);
+}
+
+.action-finish:hover:not(:disabled) {
+  background: var(--primary-700);
+}
+
+/* Botão Pausar */
+.action-pause {
+  background: var(--warning-500);
+  color: var(--white);
+}
+
+.action-pause:hover:not(:disabled) {
+  background: var(--warning-600);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .actions-container {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+}

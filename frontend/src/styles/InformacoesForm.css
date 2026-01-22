@@ -1,0 +1,115 @@
+/* InformacoesForm.css - Professional Design */
+
+.informacoes-section {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.informacoes-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-lg);
+  font-weight: var(--font-semibold);
+  color: var(--gray-900);
+  margin: 0 0 var(--spacing-md) 0;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--gray-100);
+}
+
+.informacoes-title svg {
+  color: var(--primary-600);
+}
+
+.informacoes-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.campo label {
+  font-size: var(--font-sm);
+  font-weight: var(--font-semibold);
+  color: var(--gray-700);
+}
+
+.campo input {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-base);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--gray-900);
+  transition: var(--transition-fast);
+  min-width: 140px;
+  text-align: center;
+}
+
+.campo input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.campo input::placeholder {
+  color: var(--gray-400);
+}
+
+.campo.botao {
+  margin-left: auto;
+}
+
+.campo.botao .btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  height: 42px;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .informacoes-form {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .campo.botao {
+    grid-column: span 2;
+    margin-left: 0;
+  }
+
+  .campo.botao .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .informacoes-form {
+    grid-template-columns: 1fr;
+  }
+
+  .campo {
+    width: 100%;
+  }
+
+  .campo input {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .campo.botao {
+    grid-column: span 1;
+  }
+}
