@@ -347,6 +347,7 @@ const Placas = () => {
                   ? "1 dia"
                   : `${gerarDatas(dataInicio, dataFim).length} dias`}
               </p>
+              <p>{datasExistentes.length} datas já possuem carregamentos</p>
             </div>
 
             <button
