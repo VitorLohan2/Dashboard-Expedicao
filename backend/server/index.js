@@ -9,7 +9,7 @@ const carregamentoRoutes = require("../routes/carregamentos");
 const informacoesGeraisRoutes = require("../routes/informacoesGerais");
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3005;
 
 // Database connection
 mongoose

@@ -1,8 +1,8 @@
 // src/pages/Consulta.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Components
 import Header from "../components/Header";
@@ -105,6 +105,13 @@ const Consulta = () => {
       );
     }
 
+    // Ordenar por horaInicio (do mais cedo para o mais tarde)
+    resultado = [...resultado].sort((a, b) => {
+      if (!a.horaInicio) return 1;
+      if (!b.horaInicio) return -1;
+      return new Date(a.horaInicio) - new Date(b.horaInicio);
+    });
+
     return resultado;
   }, [carregamentos, conferenteSelecionado, searchTerm]);
 
@@ -137,11 +144,15 @@ const Consulta = () => {
       c.modelo || "-",
       c.conferente || "-",
       c.equipe || "-",
+      c.horaInicio ? new Date(c.horaInicio).toLocaleTimeString("pt-BR") : "-",
+      c.horaFim ? new Date(c.horaFim).toLocaleTimeString("pt-BR") : "-",
       c.tempo || "00:00:00",
     ]);
 
-    doc.autoTable({
-      head: [["Placa", "Modelo", "Conferente", "Equipe", "Tempo"]],
+    autoTable(doc, {
+      head: [
+        ["Placa", "Modelo", "Conferente", "Equipe", "Início", "Fim", "Tempo"],
+      ],
       body: dados,
       startY: 35,
       theme: "striped",
@@ -352,6 +363,8 @@ const Consulta = () => {
                     <th>Modelo</th>
                     <th>Conferente</th>
                     <th>Equipe</th>
+                    <th>Início</th>
+                    <th>Fim</th>
                     <th>Tempo</th>
                   </tr>
                 </thead>
@@ -364,6 +377,16 @@ const Consulta = () => {
                       <td data-label="Modelo">{c.modelo}</td>
                       <td data-label="Conferente">{c.conferente}</td>
                       <td data-label="Equipe">{c.equipe}</td>
+                      <td data-label="Início">
+                        {c.horaInicio
+                          ? new Date(c.horaInicio).toLocaleTimeString("pt-BR")
+                          : "-"}
+                      </td>
+                      <td data-label="Fim">
+                        {c.horaFim
+                          ? new Date(c.horaFim).toLocaleTimeString("pt-BR")
+                          : "-"}
+                      </td>
                       <td className="td-tempo" data-label="Tempo">
                         {c.tempo || "00:00:00"}
                       </td>
