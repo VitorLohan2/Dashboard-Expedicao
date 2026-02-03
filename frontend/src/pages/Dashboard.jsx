@@ -186,6 +186,17 @@ const Dashboard = () => {
             );
             const tempoPausado = plate.tempoPausado || 0;
             const tempoReal = Math.max(0, segundosDecorridos - tempoPausado);
+
+            // Log de debug (remover depois)
+            console.log(`[Debug Tempo Rodando] Placa ${plate.placa}:`);
+            console.log(`  - horaInicio: ${plate.horaInicio}`);
+            console.log(`  - agora: ${new Date().toISOString()}`);
+            console.log(`  - segundosDecorridos: ${segundosDecorridos}s`);
+            console.log(`  - tempoPausado: ${tempoPausado}s`);
+            console.log(
+              `  - tempoReal: ${tempoReal}s (${formatarTempo(tempoReal)})`,
+            );
+
             novosTempos[plate.idPlaca] = formatarTempo(tempoReal);
           } catch (error) {
             novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
@@ -198,6 +209,17 @@ const Dashboard = () => {
             );
             const tempoPausadoAnterior = plate.tempoPausado || 0;
             const tempoReal = Math.max(0, tempoAtePausa - tempoPausadoAnterior);
+
+            // Log de debug (remover depois)
+            console.log(`[Debug Tempo Pausado] Placa ${plate.placa}:`);
+            console.log(`  - horaInicio: ${plate.horaInicio}`);
+            console.log(`  - horaPausa: ${plate.horaPausa}`);
+            console.log(`  - tempoAtePausa: ${tempoAtePausa}s`);
+            console.log(`  - tempoPausadoAnterior: ${tempoPausadoAnterior}s`);
+            console.log(
+              `  - tempoReal: ${tempoReal}s (${formatarTempo(tempoReal)})`,
+            );
+
             novosTempos[plate.idPlaca] = formatarTempo(tempoReal);
           } catch (error) {
             novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
@@ -381,6 +403,9 @@ const Dashboard = () => {
     setLoading(true);
 
     try {
+      // Guarda o tempo atual ANTES de chamar a API
+      const tempoAtualAntesDePausar = tempo;
+
       const res = await api.put(
         `/carregamentos/${selectedPlate.idPlaca}/pausar`,
         { data: dataSelecionada },
@@ -421,6 +446,11 @@ const Dashboard = () => {
         setSelectedPlate(placaSelecionadaAtualizada);
         setIsPaused(placaSelecionadaAtualizada.isPaused);
         isPausedRef.current = placaSelecionadaAtualizada.isPaused;
+
+        // Se pausou, mantém o tempo que estava mostrando antes
+        if (acao === "pausado") {
+          setTempo(tempoAtualAntesDePausar);
+        }
       }
 
       if (acao === "pausado") {
