@@ -18,7 +18,11 @@ import "../styles/Dashboard.css";
 
 // Icons
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMagnifyingGlass, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faMagnifyingGlass,
+  faPlus,
+  faSpinner,
+} from "@fortawesome/free-solid-svg-icons";
 
 // Utils
 import { formatarTempo, calcularSegundosDecorridos } from "../utils/timeUtils";
@@ -26,6 +30,8 @@ import { formatarTempo, calcularSegundosDecorridos } from "../utils/timeUtils";
 const Dashboard = () => {
   const navigate = useNavigate();
   const timerRef = useRef(null);
+  const isPausedRef = useRef(false);
+  const pausedTimeRef = useRef(0);
 
   // States
   const [dataSelecionada, setDataSelecionada] = useState(() => {
@@ -41,7 +47,10 @@ const Dashboard = () => {
   const [conferente, setConferente] = useState("");
   const [tempo, setTempo] = useState("00:00:00");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const [message, setMessage] = useState(null);
+  const [platesTempos, setPlatesTempos] = useState({});
 
   // Mostrar mensagem
   const showMessage = (type, text) => {
@@ -74,33 +83,31 @@ const Dashboard = () => {
   // Selecionar placa
   const handleSelectPlate = useCallback(
     (plate) => {
+      // Evita re-seleção da mesma placa
+      if (selectedPlate?.idPlaca === plate.idPlaca) {
+        return;
+      }
+
       setSelectedPlate(plate);
       setEquipe(plate.equipe || "");
       setConferente(plate.conferente || "");
-      pararCronometro();
-      setTempo("00:00:00");
+      setIsPaused(plate.isPaused || false);
+      isPausedRef.current = plate.isPaused || false;
 
-      if (plate.status === "Em andamento" && plate.horaInicio) {
-        try {
-          const diff = calcularSegundosDecorridos(plate.horaInicio);
-          if (diff > 0 && diff < 86400) {
-            setTempo(formatarTempo(diff));
-            iniciarCronometro(diff);
-          }
-        } catch (error) {
-          console.error("Erro ao calcular tempo:", error);
-          showMessage("error", `Erro: ${error.message}`);
-        }
+      // O tempo será atualizado pelo timer global
+      if (platesTempos[plate.idPlaca]) {
+        setTempo(platesTempos[plate.idPlaca]);
       } else {
         setTempo(plate.tempo || "00:00:00");
       }
     },
-    [pararCronometro, iniciarCronometro],
+    [selectedPlate, platesTempos],
   );
 
   // Buscar placas
   useEffect(() => {
     const fetchPlates = async () => {
+      setInitialLoading(true);
       try {
         const res = await api.get(`/carregamentos?data=${dataSelecionada}`);
         const placasFormatadas = res.data
@@ -117,32 +124,105 @@ const Dashboard = () => {
             horaInicio: item.horaInicio,
             horaFim: item.horaFim,
             tempo: item.tempo || "00:00:00",
+            isPaused: item.isPaused || false,
+            tempoPausado: item.tempoPausado || 0,
+            horaPausa: item.horaPausa || null,
           }));
 
         setPlates(placasFormatadas);
 
-        if (selectedPlate) {
-          const placaAtualizada = placasFormatadas.find(
-            (p) => p.idPlaca === selectedPlate.idPlaca,
-          );
-          if (placaAtualizada) {
-            handleSelectPlate(placaAtualizada);
-          } else {
-            setSelectedPlate(null);
-            setTempo("00:00:00");
-            setEquipe("");
-            setConferente("");
+        // Atualiza dados da placa selecionada sem re-selecionar
+        setSelectedPlate((prevSelected) => {
+          if (prevSelected) {
+            const placaAtualizada = placasFormatadas.find(
+              (p) => p.idPlaca === prevSelected.idPlaca,
+            );
+            if (placaAtualizada) {
+              // Atualiza os campos se mudaram
+              setEquipe(placaAtualizada.equipe || "");
+              setConferente(placaAtualizada.conferente || "");
+              return placaAtualizada;
+            } else {
+              // Placa não existe mais, limpa tudo
+              pararCronometro();
+              setTempo("00:00:00");
+              setEquipe("");
+              setConferente("");
+              setIsPaused(false);
+              isPausedRef.current = false;
+              pausedTimeRef.current = 0;
+              return null;
+            }
           }
-        }
+          return null;
+        });
       } catch (err) {
         console.error("Erro ao buscar placas:", err);
         showMessage("warning", "Não foi possível carregar as placas.");
+      } finally {
+        setInitialLoading(false);
       }
     };
 
     fetchPlates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataSelecionada, selectedPlate?.idPlaca, handleSelectPlate]);
+  }, [dataSelecionada]);
+
+  // Timer global para atualizar tempos de todas as placas
+  useEffect(() => {
+    // Calcula imediatamente ao montar
+    const calcularTodosTempos = () => {
+      const novosTempos = {};
+
+      plates.forEach((plate) => {
+        if (
+          plate.status === "Em andamento" &&
+          plate.horaInicio &&
+          !plate.isPaused
+        ) {
+          try {
+            const segundosDecorridos = calcularSegundosDecorridos(
+              plate.horaInicio,
+            );
+            const tempoPausado = plate.tempoPausado || 0;
+            const tempoReal = Math.max(0, segundosDecorridos - tempoPausado);
+            novosTempos[plate.idPlaca] = formatarTempo(tempoReal);
+          } catch (error) {
+            novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
+          }
+        } else if (plate.isPaused && plate.horaInicio && plate.horaPausa) {
+          try {
+            const tempoAtePausa = calcularSegundosDecorridos(
+              plate.horaInicio,
+              plate.horaPausa,
+            );
+            const tempoPausadoAnterior = plate.tempoPausado || 0;
+            const tempoReal = Math.max(0, tempoAtePausa - tempoPausadoAnterior);
+            novosTempos[plate.idPlaca] = formatarTempo(tempoReal);
+          } catch (error) {
+            novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
+          }
+        } else {
+          novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
+        }
+      });
+
+      setPlatesTempos(novosTempos);
+
+      // Atualiza o tempo da placa selecionada
+      if (selectedPlate && novosTempos[selectedPlate.idPlaca]) {
+        setTempo(novosTempos[selectedPlate.idPlaca]);
+      }
+    };
+
+    // Calcula imediatamente
+    calcularTodosTempos();
+
+    // Depois atualiza a cada segundo
+    const intervalId = setInterval(calcularTodosTempos, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [plates, selectedPlate]);
 
   // Limpar cronômetro ao desmontar
   useEffect(() => {
@@ -180,8 +260,6 @@ const Dashboard = () => {
         },
       );
 
-      const atualizado = { ...selectedPlate, ...res.data.carregamento };
-
       if (res.data.alerta) {
         showMessage(
           "warning",
@@ -191,15 +269,39 @@ const Dashboard = () => {
         showMessage("success", "Carregamento iniciado com sucesso!");
       }
 
-      setTempo("00:00:00");
-      iniciarCronometro(0);
+      // Recarrega as placas do servidor para garantir sincronização
+      const platesRes = await api.get(`/carregamentos?data=${dataSelecionada}`);
+      const placasAtualizadas = platesRes.data
+        .filter((item) => item.placa && item.placa.trim() !== "")
+        .map((item) => ({
+          id: item._id,
+          idPlaca: item.idPlaca,
+          placa: item.placa,
+          modelo: item.modelo,
+          codigoBarra: item.codigoBarra,
+          status: item.status,
+          equipe: item.equipe || "",
+          conferente: item.conferente || "",
+          horaInicio: item.horaInicio,
+          horaFim: item.horaFim,
+          tempo: item.tempo || "00:00:00",
+          isPaused: item.isPaused || false,
+          tempoPausado: item.tempoPausado || 0,
+          horaPausa: item.horaPausa || null,
+        }));
 
-      const updatedPlates = plates.map((p) =>
-        p.idPlaca === atualizado.idPlaca ? atualizado : p,
+      setPlates(placasAtualizadas);
+
+      // Atualiza a placa selecionada
+      const placaSelecionadaAtualizada = placasAtualizadas.find(
+        (p) => p.idPlaca === selectedPlate.idPlaca,
       );
 
-      setPlates(updatedPlates);
-      setSelectedPlate(atualizado);
+      if (placaSelecionadaAtualizada) {
+        setSelectedPlate(placaSelecionadaAtualizada);
+        setIsPaused(false);
+        isPausedRef.current = false;
+      }
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       showMessage("error", "Erro ao iniciar o carregamento.");
@@ -217,7 +319,6 @@ const Dashboard = () => {
     }
 
     setLoading(true);
-    pararCronometro();
 
     try {
       const res = await api.put(
@@ -227,15 +328,42 @@ const Dashboard = () => {
         },
       );
 
-      const finalizado = res.data.carregamento;
-      const updated = plates.map((p) =>
-        p.idPlaca === finalizado.idPlaca ? finalizado : p,
+      showMessage("success", "Carregamento finalizado com sucesso!");
+
+      // Recarrega as placas do servidor
+      const platesRes = await api.get(`/carregamentos?data=${dataSelecionada}`);
+      const placasAtualizadas = platesRes.data
+        .filter((item) => item.placa && item.placa.trim() !== "")
+        .map((item) => ({
+          id: item._id,
+          idPlaca: item.idPlaca,
+          placa: item.placa,
+          modelo: item.modelo,
+          codigoBarra: item.codigoBarra,
+          status: item.status,
+          equipe: item.equipe || "",
+          conferente: item.conferente || "",
+          horaInicio: item.horaInicio,
+          horaFim: item.horaFim,
+          tempo: item.tempo || "00:00:00",
+          isPaused: item.isPaused || false,
+          tempoPausado: item.tempoPausado || 0,
+          horaPausa: item.horaPausa || null,
+        }));
+
+      setPlates(placasAtualizadas);
+
+      // Atualiza a placa selecionada
+      const placaSelecionadaAtualizada = placasAtualizadas.find(
+        (p) => p.idPlaca === selectedPlate.idPlaca,
       );
 
-      setPlates(updated);
-      setSelectedPlate(finalizado);
-
-      showMessage("success", "Carregamento finalizado com sucesso!");
+      if (placaSelecionadaAtualizada) {
+        setSelectedPlate(placaSelecionadaAtualizada);
+        setTempo(placaSelecionadaAtualizada.tempo);
+        setIsPaused(false);
+        isPausedRef.current = false;
+      }
     } catch (error) {
       console.error("Erro ao finalizar:", error);
       showMessage("error", "Erro ao finalizar o carregamento.");
@@ -244,8 +372,68 @@ const Dashboard = () => {
     }
   };
 
-  const handlePause = () => {
-    showMessage("info", "Função em desenvolvimento.");
+  const handlePause = async () => {
+    if (!selectedPlate || selectedPlate.status !== "Em andamento") {
+      showMessage("info", "Só é possível pausar carregamentos em andamento.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await api.put(
+        `/carregamentos/${selectedPlate.idPlaca}/pausar`,
+        { data: dataSelecionada },
+      );
+
+      const atualizado = res.data.carregamento;
+      const acao = res.data.acao;
+
+      // Recarrega as placas do servidor para garantir sincronização
+      const platesRes = await api.get(`/carregamentos?data=${dataSelecionada}`);
+      const placasAtualizadas = platesRes.data
+        .filter((item) => item.placa && item.placa.trim() !== "")
+        .map((item) => ({
+          id: item._id,
+          idPlaca: item.idPlaca,
+          placa: item.placa,
+          modelo: item.modelo,
+          codigoBarra: item.codigoBarra,
+          status: item.status,
+          equipe: item.equipe || "",
+          conferente: item.conferente || "",
+          horaInicio: item.horaInicio,
+          horaFim: item.horaFim,
+          tempo: item.tempo || "00:00:00",
+          isPaused: item.isPaused || false,
+          tempoPausado: item.tempoPausado || 0,
+          horaPausa: item.horaPausa || null,
+        }));
+
+      setPlates(placasAtualizadas);
+
+      // Atualiza a placa selecionada
+      const placaSelecionadaAtualizada = placasAtualizadas.find(
+        (p) => p.idPlaca === selectedPlate.idPlaca,
+      );
+
+      if (placaSelecionadaAtualizada) {
+        setSelectedPlate(placaSelecionadaAtualizada);
+        setIsPaused(placaSelecionadaAtualizada.isPaused);
+        isPausedRef.current = placaSelecionadaAtualizada.isPaused;
+      }
+
+      if (acao === "pausado") {
+        showMessage("info", "Cronômetro pausado!");
+      } else {
+        showMessage("success", "Cronômetro retomado!");
+      }
+    } catch (error) {
+      console.error("Erro ao pausar/retomar:", error);
+      showMessage("error", "Erro ao pausar/retomar o carregamento.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Estatísticas
@@ -338,11 +526,19 @@ const Dashboard = () => {
         {/* Tabela de placas */}
         <div className="section">
           <h2 className="section-title">Placas do Dia</h2>
-          <PlateTable
-            plates={plates}
-            selectedPlate={selectedPlate}
-            onSelect={handleSelectPlate}
-          />
+          {initialLoading ? (
+            <div className="loading-container">
+              <FontAwesomeIcon icon={faSpinner} spin className="loading-icon" />
+              <p className="loading-text">Carregando dados...</p>
+            </div>
+          ) : (
+            <PlateTable
+              plates={plates}
+              selectedPlate={selectedPlate}
+              onSelect={handleSelectPlate}
+              platesTempos={platesTempos}
+            />
+          )}
         </div>
 
         {/* Detalhes da placa selecionada */}
@@ -361,7 +557,7 @@ const Dashboard = () => {
               onStart={handleStart}
               onFinish={handleFinish}
               onPause={handlePause}
-              isPaused={false}
+              isPaused={isPaused}
               loading={loading}
               status={selectedPlate.status}
             />

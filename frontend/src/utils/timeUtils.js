@@ -13,16 +13,24 @@ export const formatarTempo = (segundos) => {
 };
 
 /**
- * Calcula segundos decorridos desde uma data ISO
- * @param {string} isoString - Data no formato ISO
+ * Calcula segundos decorridos desde uma data ISO até outra data (ou agora)
+ * @param {string} isoStringInicio - Data de início no formato ISO
+ * @param {string} isoStringFim - Data de fim no formato ISO (opcional, usa Date.now() se não fornecido)
  * @returns {number} Segundos decorridos
  */
-export const calcularSegundosDecorridos = (isoString) => {
-  const inicio = new Date(isoString);
+export const calcularSegundosDecorridos = (
+  isoStringInicio,
+  isoStringFim = null,
+) => {
+  const inicio = new Date(isoStringInicio);
   if (isNaN(inicio.getTime())) {
-    throw new Error("Data inválida");
+    throw new Error("Data inálida");
   }
-  return Math.floor((Date.now() - inicio.getTime()) / 1000);
+  const fim = isoStringFim ? new Date(isoStringFim) : new Date();
+  if (isNaN(fim.getTime())) {
+    throw new Error("Data de fim inválida");
+  }
+  return Math.floor((fim.getTime() - inicio.getTime()) / 1000);
 };
 
 /**

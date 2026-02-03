@@ -145,6 +145,10 @@ router.put("/:idPlaca/iniciar", async (req, res) => {
         equipe,
         conferente,
         status: "Em andamento",
+        isPaused: false,
+        horaPausa: null,
+        tempoPausado: 0,
+        tempo: "00:00:00",
         updatedAt: horaInicio.toJSDate(),
       },
       { new: true },
@@ -186,20 +190,39 @@ router.put("/:idPlaca/finalizar", async (req, res) => {
 
     const horaFim = DateTime.local();
 
-    // Calcular tempo total
-    const tempoTotalMs = horaFim.diff(horaInicio, "milliseconds").milliseconds;
+    // Calcular tempo total de pausas
+    // tempoPausado já contém o tempo acumulado de pausas anteriores (quando retomou)
+    let tempoPausadoTotal = registro.tempoPausado || 0;
 
-    if (tempoTotalMs <= 0) {
-      return res
-        .status(400)
-        .json({ erro: "Hora de fim é anterior à hora de início" });
+    // Se estiver pausado AGORA, adiciona o tempo desta pausa atual
+    if (registro.isPaused && registro.horaPausa) {
+      const horaPausa = DateTime.fromJSDate(registro.horaPausa);
+      if (horaPausa.isValid) {
+        const tempoNestaPausa = horaFim.diff(horaPausa, "seconds").seconds;
+        tempoPausadoTotal += Math.floor(tempoNestaPausa);
+      }
     }
 
-    const horas = Math.floor(tempoTotalMs / 3600000);
-    const minutos = Math.floor((tempoTotalMs % 3600000) / 60000);
-    const segundos = Math.floor((tempoTotalMs % 60000) / 1000);
+    // Tempo bruto = fim - inicio (em segundos)
+    const tempoTotalSegundos = horaFim.diff(horaInicio, "seconds").seconds;
+
+    // Tempo efetivo = tempo bruto - tempo pausado
+    const tempoEfetivoSegundos = Math.max(
+      0,
+      Math.floor(tempoTotalSegundos) - tempoPausadoTotal,
+    );
+
+    // Converter para HH:MM:SS
+    const horas = Math.floor(tempoEfetivoSegundos / 3600);
+    const minutos = Math.floor((tempoEfetivoSegundos % 3600) / 60);
+    const segundos = tempoEfetivoSegundos % 60;
 
     const tempoTotal = `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+
+    console.log(`[Finalizar] Placa ${idPlaca}:`);
+    console.log(`  - Tempo bruto: ${Math.floor(tempoTotalSegundos)}s`);
+    console.log(`  - Tempo pausado: ${tempoPausadoTotal}s`);
+    console.log(`  - Tempo efetivo: ${tempoEfetivoSegundos}s = ${tempoTotal}`);
 
     const atualizado = await Carregamento.findOneAndUpdate(
       { idPlaca, data },
@@ -207,6 +230,9 @@ router.put("/:idPlaca/finalizar", async (req, res) => {
         horaFim: horaFim.toISO(),
         tempo: tempoTotal,
         status: "Finalizado",
+        isPaused: false,
+        horaPausa: null,
+        tempoPausado: tempoPausadoTotal,
         updatedAt: horaFim.toJSDate(),
       },
       { new: true },
@@ -218,6 +244,88 @@ router.put("/:idPlaca/finalizar", async (req, res) => {
     res
       .status(500)
       .json({ erro: "Erro no servidor ao finalizar carregamento" });
+  }
+});
+
+/**
+ * PUT /carregamentos/:idPlaca/pausar
+ * Pausa ou retoma um carregamento
+ */
+router.put("/:idPlaca/pausar", async (req, res) => {
+  const { idPlaca } = req.params;
+  const { data } = req.body;
+
+  try {
+    const registro = await Carregamento.findOne({ idPlaca, data });
+
+    if (!registro) {
+      return res.status(404).json({ erro: "Registro não encontrado" });
+    }
+
+    if (registro.status !== "Em andamento") {
+      return res
+        .status(400)
+        .json({ erro: "Só é possível pausar carregamentos em andamento" });
+    }
+
+    const agora = DateTime.local();
+
+    if (registro.isPaused) {
+      // RETOMAR - calcula o tempo que ficou pausado e adiciona ao tempoPausado
+      const horaPausa = DateTime.fromJSDate(registro.horaPausa);
+
+      if (!horaPausa.isValid) {
+        return res.status(400).json({ erro: "Hora de pausa inválida" });
+      }
+
+      const tempoNestaPausa = Math.floor(
+        agora.diff(horaPausa, "seconds").seconds,
+      );
+      const tempoPausadoAnterior = registro.tempoPausado || 0;
+      const novoTempoPausado = tempoPausadoAnterior + tempoNestaPausa;
+
+      console.log(`[Retomar] Placa ${idPlaca}:`);
+      console.log(`  - Tempo nesta pausa: ${tempoNestaPausa}s`);
+      console.log(`  - Tempo pausado anterior: ${tempoPausadoAnterior}s`);
+      console.log(`  - Novo tempo pausado total: ${novoTempoPausado}s`);
+
+      const atualizado = await Carregamento.findOneAndUpdate(
+        { idPlaca, data },
+        {
+          isPaused: false,
+          horaPausa: null,
+          tempoPausado: novoTempoPausado,
+          updatedAt: agora.toJSDate(),
+        },
+        { new: true },
+      );
+
+      res.json({ carregamento: atualizado, acao: "retomado" });
+    } else {
+      // PAUSAR - registra a hora da pausa
+      console.log(`[Pausar] Placa ${idPlaca}:`);
+      console.log(
+        `  - Tempo pausado acumulado até agora: ${registro.tempoPausado || 0}s`,
+      );
+      console.log(`  - Hora da pausa: ${agora.toISO()}`);
+
+      const atualizado = await Carregamento.findOneAndUpdate(
+        { idPlaca, data },
+        {
+          isPaused: true,
+          horaPausa: agora.toISO(),
+          updatedAt: agora.toJSDate(),
+        },
+        { new: true },
+      );
+
+      res.json({ carregamento: atualizado, acao: "pausado" });
+    }
+  } catch (error) {
+    console.error("Erro ao pausar/retomar carregamento:", error);
+    res
+      .status(500)
+      .json({ erro: "Erro no servidor ao pausar/retomar carregamento" });
   }
 });
 

@@ -107,3 +107,27 @@
   margin: 0;
   font-size: var(--font-base);
 }
+
+/* Tempo Cell */
+.tempo-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-family: "Courier New", Courier, monospace;
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  color: var(--gray-700);
+}
+
+.tempo-cell svg {
+  font-size: 0.75rem;
+  color: var(--primary-500);
+}
+
+.tempo-cell.tempo-paused {
+  color: var(--warning-600);
+}
+
+.tempo-cell.tempo-paused svg {
+  color: var(--warning-500);
+}
