@@ -273,6 +273,7 @@ router.put("/:idPlaca/pausar", async (req, res) => {
     if (registro.isPaused) {
       // RETOMAR - calcula o tempo que ficou pausado e adiciona ao tempoPausado
       const horaPausa = DateTime.fromJSDate(registro.horaPausa);
+      const horaInicio = DateTime.fromJSDate(registro.horaInicio);
 
       if (!horaPausa.isValid) {
         return res.status(400).json({ erro: "Hora de pausa inválida" });
@@ -284,10 +285,17 @@ router.put("/:idPlaca/pausar", async (req, res) => {
       const tempoPausadoAnterior = registro.tempoPausado || 0;
       const novoTempoPausado = tempoPausadoAnterior + tempoNestaPausa;
 
+      // Calcula o tempo efetivo no momento de retomar
+      const tempoTotalAteAgora = Math.floor(
+        agora.diff(horaInicio, "seconds").seconds,
+      );
+      const tempoEfetivoAtual = tempoTotalAteAgora - novoTempoPausado;
+
       console.log(`[Retomar] Placa ${idPlaca}:`);
       console.log(`  - Tempo nesta pausa: ${tempoNestaPausa}s`);
       console.log(`  - Tempo pausado anterior: ${tempoPausadoAnterior}s`);
       console.log(`  - Novo tempo pausado total: ${novoTempoPausado}s`);
+      console.log(`  - Tempo efetivo (trabalhado): ${tempoEfetivoAtual}s`);
 
       const atualizado = await Carregamento.findOneAndUpdate(
         { idPlaca, data },
@@ -300,13 +308,28 @@ router.put("/:idPlaca/pausar", async (req, res) => {
         { new: true },
       );
 
-      res.json({ carregamento: atualizado, acao: "retomado" });
+      res.json({
+        carregamento: atualizado,
+        acao: "retomado",
+        tempoEfetivoAtual: tempoEfetivoAtual,
+      });
     } else {
       // PAUSAR - registra a hora da pausa
+      const horaInicio = DateTime.fromJSDate(registro.horaInicio);
+      const tempoPausadoAnterior = registro.tempoPausado || 0;
+
+      // Calcula o tempo efetivo no momento da pausa
+      const tempoTotalAteAgora = Math.floor(
+        agora.diff(horaInicio, "seconds").seconds,
+      );
+      const tempoEfetivoAtual = tempoTotalAteAgora - tempoPausadoAnterior;
+
       console.log(`[Pausar] Placa ${idPlaca}:`);
       console.log(
-        `  - Tempo pausado acumulado até agora: ${registro.tempoPausado || 0}s`,
+        `  - Tempo pausado acumulado até agora: ${tempoPausadoAnterior}s`,
       );
+      console.log(`  - Tempo total desde início: ${tempoTotalAteAgora}s`);
+      console.log(`  - Tempo efetivo (trabalhado): ${tempoEfetivoAtual}s`);
       console.log(`  - Hora da pausa: ${agora.toISO()}`);
 
       const atualizado = await Carregamento.findOneAndUpdate(
@@ -319,7 +342,11 @@ router.put("/:idPlaca/pausar", async (req, res) => {
         { new: true },
       );
 
-      res.json({ carregamento: atualizado, acao: "pausado" });
+      res.json({
+        carregamento: atualizado,
+        acao: "pausado",
+        tempoEfetivoAtual: tempoEfetivoAtual,
+      });
     }
   } catch (error) {
     console.error("Erro ao pausar/retomar carregamento:", error);
