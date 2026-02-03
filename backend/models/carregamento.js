@@ -52,6 +52,10 @@ const carregamentoSchema = new mongoose.Schema(
       type: Date, // Hora em que foi pausado (para calcular tempo quando retomar)
       required: false,
     },
+    tempoEfetivoNaPausa: {
+      type: Number, // Tempo efetivo de trabalho no momento da pausa (em segundos)
+      default: 0,
+    },
   },
   {
     timestamps: true,

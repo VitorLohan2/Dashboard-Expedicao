@@ -303,6 +303,7 @@ router.put("/:idPlaca/pausar", async (req, res) => {
           isPaused: false,
           horaPausa: null,
           tempoPausado: novoTempoPausado,
+          tempoEfetivoNaPausa: 0, // Limpa ao retomar
           updatedAt: agora.toJSDate(),
         },
         { new: true },
@@ -337,6 +338,7 @@ router.put("/:idPlaca/pausar", async (req, res) => {
         {
           isPaused: true,
           horaPausa: agora.toISO(),
+          tempoEfetivoNaPausa: tempoEfetivoAtual, // Salva o tempo efetivo no momento da pausa
           updatedAt: agora.toJSDate(),
         },
         { new: true },

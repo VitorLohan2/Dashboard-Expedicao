@@ -127,6 +127,7 @@ const Dashboard = () => {
             isPaused: item.isPaused || false,
             tempoPausado: item.tempoPausado || 0,
             horaPausa: item.horaPausa || null,
+            tempoEfetivoNaPausa: item.tempoEfetivoNaPausa || 0,
           }));
 
         setPlates(placasFormatadas);
@@ -180,6 +181,7 @@ const Dashboard = () => {
           plate.horaInicio &&
           !plate.isPaused
         ) {
+          // Placa rodando - calcula tempo em tempo real
           try {
             const segundosDecorridos = calcularSegundosDecorridos(
               plate.horaInicio,
@@ -190,18 +192,10 @@ const Dashboard = () => {
           } catch (error) {
             novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
           }
-        } else if (plate.isPaused && plate.horaInicio && plate.horaPausa) {
-          try {
-            const tempoAtePausa = calcularSegundosDecorridos(
-              plate.horaInicio,
-              plate.horaPausa,
-            );
-            const tempoPausadoAnterior = plate.tempoPausado || 0;
-            const tempoReal = Math.max(0, tempoAtePausa - tempoPausadoAnterior);
-            novosTempos[plate.idPlaca] = formatarTempo(tempoReal);
-          } catch (error) {
-            novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
-          }
+        } else if (plate.isPaused && plate.horaInicio) {
+          // Placa pausada - usa o tempo efetivo salvo pelo servidor
+          const tempoEfetivo = plate.tempoEfetivoNaPausa || 0;
+          novosTempos[plate.idPlaca] = formatarTempo(tempoEfetivo);
         } else {
           novosTempos[plate.idPlaca] = plate.tempo || "00:00:00";
         }
@@ -288,6 +282,7 @@ const Dashboard = () => {
           isPaused: item.isPaused || false,
           tempoPausado: item.tempoPausado || 0,
           horaPausa: item.horaPausa || null,
+          tempoEfetivoNaPausa: item.tempoEfetivoNaPausa || 0,
         }));
 
       setPlates(placasAtualizadas);
@@ -349,6 +344,7 @@ const Dashboard = () => {
           isPaused: item.isPaused || false,
           tempoPausado: item.tempoPausado || 0,
           horaPausa: item.horaPausa || null,
+          tempoEfetivoNaPausa: item.tempoEfetivoNaPausa || 0,
         }));
 
       setPlates(placasAtualizadas);
@@ -409,6 +405,7 @@ const Dashboard = () => {
           isPaused: item.isPaused || false,
           tempoPausado: item.tempoPausado || 0,
           horaPausa: item.horaPausa || null,
+          tempoEfetivoNaPausa: item.tempoEfetivoNaPausa || 0,
         }));
 
       setPlates(placasAtualizadas);
