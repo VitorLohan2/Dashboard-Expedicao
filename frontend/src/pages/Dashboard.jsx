@@ -244,6 +244,9 @@ const Dashboard = () => {
 
     setLoading(true);
 
+    // Captura a hora de início ANTES de chamar a API
+    const horaInicioLocal = new Date().toISOString();
+
     try {
       const res = await api.put(
         `/carregamentos/${selectedPlate.idPlaca}/iniciar`,
@@ -254,6 +257,28 @@ const Dashboard = () => {
         },
       );
 
+      // Atualiza estado local IMEDIATAMENTE com os dados que já temos
+      // Isso faz o timer começar sem esperar recarregar todas as placas
+      const placaIniciada = {
+        ...selectedPlate,
+        status: "Em andamento",
+        horaInicio: res.data.carregamento?.horaInicio || horaInicioLocal,
+        equipe: equipe,
+        conferente: conferente,
+        isPaused: false,
+        tempoPausado: 0,
+      };
+
+      setSelectedPlate(placaIniciada);
+      setPlates((prevPlates) =>
+        prevPlates.map((p) =>
+          p.idPlaca === selectedPlate.idPlaca ? placaIniciada : p,
+        ),
+      );
+      setTempo("00:00:00");
+      setIsPaused(false);
+      isPausedRef.current = false;
+
       if (res.data.alerta) {
         showMessage(
           "warning",
@@ -263,40 +288,8 @@ const Dashboard = () => {
         showMessage("success", "Carregamento iniciado com sucesso!");
       }
 
-      // Recarrega as placas do servidor para garantir sincronização
-      const platesRes = await api.get(`/carregamentos?data=${dataSelecionada}`);
-      const placasAtualizadas = platesRes.data
-        .filter((item) => item.placa && item.placa.trim() !== "")
-        .map((item) => ({
-          id: item._id,
-          idPlaca: item.idPlaca,
-          placa: item.placa,
-          modelo: item.modelo,
-          codigoBarra: item.codigoBarra,
-          status: item.status,
-          equipe: item.equipe || "",
-          conferente: item.conferente || "",
-          horaInicio: item.horaInicio,
-          horaFim: item.horaFim,
-          tempo: item.tempo || "00:00:00",
-          isPaused: item.isPaused || false,
-          tempoPausado: item.tempoPausado || 0,
-          horaPausa: item.horaPausa || null,
-          tempoEfetivoNaPausa: item.tempoEfetivoNaPausa || 0,
-        }));
-
-      setPlates(placasAtualizadas);
-
-      // Atualiza a placa selecionada
-      const placaSelecionadaAtualizada = placasAtualizadas.find(
-        (p) => p.idPlaca === selectedPlate.idPlaca,
-      );
-
-      if (placaSelecionadaAtualizada) {
-        setSelectedPlate(placaSelecionadaAtualizada);
-        setIsPaused(false);
-        isPausedRef.current = false;
-      }
+      // Não precisa recarregar todas as placas - já atualizamos o estado local
+      // A sincronização completa acontece no polling ou na próxima ação
     } catch (error) {
       console.error("Erro ao iniciar:", error);
       showMessage("error", "Erro ao iniciar o carregamento.");

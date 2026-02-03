@@ -21,7 +21,9 @@ async function deletarPlacas() {
       data: { $gte: dataInicio },
     }).sort({ data: 1, idPlaca: 1 });
 
-    console.log(`Encontradas ${placasParaDeletar.length} placas para deletar:\n`);
+    console.log(
+      `Encontradas ${placasParaDeletar.length} placas para deletar:\n`,
+    );
 
     if (placasParaDeletar.length === 0) {
       console.log("Nenhuma placa encontrada para deletar.");
@@ -31,11 +33,15 @@ async function deletarPlacas() {
 
     // Listar as placas que serão deletadas
     placasParaDeletar.forEach((p) => {
-      console.log(`  - Data: ${p.data} | Placa: ${p.placa} | ID: ${p.idPlaca} | Status: ${p.status}`);
+      console.log(
+        `  - Data: ${p.data} | Placa: ${p.placa} | ID: ${p.idPlaca} | Status: ${p.status}`,
+      );
     });
 
     console.log("\n⚠️  ATENÇÃO: Esta operação é irreversível!");
-    console.log("Pressione Ctrl+C para cancelar ou aguarde 5 segundos para continuar...\n");
+    console.log(
+      "Pressione Ctrl+C para cancelar ou aguarde 5 segundos para continuar...\n",
+    );
 
     // Aguarda 5 segundos antes de deletar
     await new Promise((resolve) => setTimeout(resolve, 5000));
