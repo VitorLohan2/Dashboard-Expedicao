@@ -27,6 +27,7 @@ const CONFERENTES = [
   "Tavares",
   "Jhonath",
   "Washington",
+  "Jose",
 ];
 
 // Opções de equipe (quantidade de pessoas)
