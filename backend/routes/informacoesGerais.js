@@ -46,9 +46,14 @@ router.get("/:data", async (req, res) => {
     const info = await InformacoesGerais.findOne({ data });
 
     if (!info) {
-      return res
-        .status(404)
-        .json({ erro: "Informações não encontradas para a data" });
+      // Retorna objeto vazio em vez de 404 para evitar erros no console
+      return res.json({
+        data,
+        totalPedidos: "",
+        confZonas: "",
+        zonaum: "",
+        carregmanha: "",
+      });
     }
 
     res.json(info);

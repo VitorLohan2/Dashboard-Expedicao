@@ -40,6 +40,8 @@ const Consulta = () => {
 
   const [carregamentos, setCarregamentos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [conectandoBackend, setConectandoBackend] = useState(true);
+  const [cplusConectado, setCplusConectado] = useState(true);
   const [message, setMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [conferenteSelecionado, setConferenteSelecionado] = useState(null);
@@ -57,11 +59,21 @@ const Consulta = () => {
       const res = await api.get(
         `/carregamentos/finalizados?data=${dataSelecionada}`,
       );
-      setCarregamentos(res.data || []);
+      // Novo formato: { dados: [...], cplusConectado: boolean }
+      const resposta = res.data;
+      if (resposta.dados) {
+        setCarregamentos(resposta.dados);
+        setCplusConectado(resposta.cplusConectado);
+      } else {
+        // Fallback para formato antigo
+        setCarregamentos(resposta || []);
+      }
       setConferenteSelecionado(null);
+      setConectandoBackend(false);
     } catch (error) {
       console.error("Erro ao buscar carregamentos:", error);
       showMessage("error", "Erro ao buscar carregamentos.");
+      setConectandoBackend(false);
     } finally {
       setLoading(false);
     }
@@ -146,16 +158,31 @@ const Consulta = () => {
       c.equipe || "-",
       c.horaInicio ? new Date(c.horaInicio).toLocaleTimeString("pt-BR") : "-",
       c.horaFim ? new Date(c.horaFim).toLocaleTimeString("pt-BR") : "-",
+      c.cplusInicio ? new Date(c.cplusInicio).toLocaleTimeString("pt-BR") : "-",
+      c.cplusFim ? new Date(c.cplusFim).toLocaleTimeString("pt-BR") : "-",
       c.tempo || "00:00:00",
     ]);
 
     autoTable(doc, {
       head: [
-        ["Placa", "Modelo", "Conferente", "Equipe", "Início", "Fim", "Tempo"],
+        [
+          "Placa",
+          "Modelo",
+          "Conferente",
+          "Equipe",
+          "Início",
+          "Fim",
+          "Início (C-Plus)",
+          "Fim (C-Plus)",
+          "Tempo",
+        ],
       ],
       body: dados,
       startY: 35,
       theme: "striped",
+      styles: {
+        fontSize: 8,
+      },
       headStyles: {
         fillColor: [30, 58, 138],
         textColor: [255, 255, 255],
@@ -204,6 +231,14 @@ const Consulta = () => {
       <div className="consulta-container">
         <Header />
 
+        {/* Loading de conexão inicial */}
+        {conectandoBackend && (
+          <div className="conexao-loading">
+            <div className="conexao-loading-spinner"></div>
+            <p className="conexao-loading-text">Conectando ao servidor...</p>
+          </div>
+        )}
+
         {message && (
           <StatusMessage
             type={message.type}
@@ -212,196 +247,236 @@ const Consulta = () => {
           />
         )}
 
-        <div className="consulta-header">
-          <div className="consulta-header-left">
-            <button className="btn btn-ghost" onClick={() => navigate("/")}>
-              <FontAwesomeIcon icon={faArrowLeft} />
-              <span>Voltar</span>
-            </button>
-          </div>
-          <div className="consulta-header-center">
-            <h1 className="consulta-title">Consulta de Carregamentos</h1>
-            <p className="consulta-subtitle">
-              Visualize os carregamentos finalizados
-            </p>
-          </div>
-          <div className="consulta-header-right">
-            <button className="btn btn-primary" onClick={gerarPDF}>
-              <FontAwesomeIcon icon={faFilePdf} />
-              <span>Exportar PDF</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Controles */}
-        <div className="consulta-controls">
-          <div className="control-group">
-            <label htmlFor="data" className="control-label">
-              Data
-            </label>
-            <input
-              type="date"
-              id="data"
-              className="control-input"
-              value={dataSelecionada}
-              onChange={(e) => setDataSelecionada(e.target.value)}
-            />
-          </div>
-
-          <div className="control-group search-group">
-            <label htmlFor="search" className="control-label">
-              Buscar
-            </label>
-            <div className="search-input-wrapper">
-              <FontAwesomeIcon icon={faSearch} className="search-icon" />
-              <input
-                type="text"
-                id="search"
-                className="control-input search-input"
-                placeholder="Placa, conferente, equipe..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Filtro ativo */}
-        {conferenteSelecionado && (
-          <div className="filtro-ativo">
-            <FontAwesomeIcon icon={faFilter} />
-            <span>
-              Filtrando por: <strong>{conferenteSelecionado}</strong>
-            </span>
-            <button
-              className="btn-limpar-filtro"
-              onClick={limparFiltroConferente}
-            >
-              <FontAwesomeIcon icon={faTimes} />
-              Limpar
-            </button>
-          </div>
-        )}
-
-        {/* Estatísticas e resumo por conferente */}
-        <div className="consulta-grid">
-          {/* Cards de resumo */}
-          <div className="resumo-section">
-            <h2 className="section-title">
-              <FontAwesomeIcon icon={faTruck} />
-              Resumo
-            </h2>
-
-            <div className="resumo-card total">
-              <span className="resumo-valor">{carregamentos.length}</span>
-              <span className="resumo-label">Total Finalizados</span>
+        {!conectandoBackend && (
+          <>
+            <div className="consulta-header">
+              <div className="consulta-header-left">
+                <button className="btn btn-ghost" onClick={() => navigate("/")}>
+                  <FontAwesomeIcon icon={faArrowLeft} />
+                  <span>Voltar</span>
+                </button>
+              </div>
+              <div className="consulta-header-center">
+                <h1 className="consulta-title">Consulta de Carregamentos</h1>
+                <p className="consulta-subtitle">
+                  Visualize os carregamentos finalizados
+                  {!cplusConectado && (
+                    <span style={{ color: "#dc3545", marginLeft: "10px" }}>
+                      {" "}
+                      ⚠️ CPlus desconectado
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="consulta-header-right">
+                <button className="btn btn-primary" onClick={gerarPDF}>
+                  <FontAwesomeIcon icon={faFilePdf} />
+                  <span>Exportar PDF</span>
+                </button>
+              </div>
             </div>
 
+            {/* Controles */}
+            <div className="consulta-controls">
+              <div className="control-group">
+                <label htmlFor="data" className="control-label">
+                  Data
+                </label>
+                <input
+                  type="date"
+                  id="data"
+                  className="control-input"
+                  value={dataSelecionada}
+                  onChange={(e) => setDataSelecionada(e.target.value)}
+                />
+              </div>
+
+              <div className="control-group search-group">
+                <label htmlFor="search" className="control-label">
+                  Buscar
+                </label>
+                <div className="search-input-wrapper">
+                  <FontAwesomeIcon icon={faSearch} className="search-icon" />
+                  <input
+                    type="text"
+                    id="search"
+                    className="control-input search-input"
+                    placeholder="Placa, conferente, equipe..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Filtro ativo */}
             {conferenteSelecionado && (
-              <div className="resumo-card filtrado">
-                <span className="resumo-valor">
-                  {carregamentosFiltrados.length}
+              <div className="filtro-ativo">
+                <FontAwesomeIcon icon={faFilter} />
+                <span>
+                  Filtrando por: <strong>{conferenteSelecionado}</strong>
                 </span>
-                <span className="resumo-label">De {conferenteSelecionado}</span>
+                <button
+                  className="btn-limpar-filtro"
+                  onClick={limparFiltroConferente}
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                  Limpar
+                </button>
               </div>
             )}
-          </div>
 
-          {/* Lista de conferentes */}
-          <div className="conferentes-section">
-            <h2 className="section-title">
-              <FontAwesomeIcon icon={faUser} />
-              Caminhões por Conferente
-            </h2>
+            {/* Estatísticas e resumo por conferente */}
+            <div className="consulta-grid">
+              {/* Cards de resumo */}
+              <div className="resumo-section">
+                <h2 className="section-title">
+                  <FontAwesomeIcon icon={faTruck} />
+                  Resumo
+                </h2>
 
-            {conferentesContagem.length > 0 ? (
-              <ul className="conferentes-lista">
-                {conferentesContagem.map(([nome, qtd]) => (
-                  <li
-                    key={nome}
-                    className={`conferente-item ${
-                      conferenteSelecionado === nome ? "ativo" : ""
-                    }`}
-                    onClick={() =>
-                      setConferenteSelecionado(
-                        conferenteSelecionado === nome ? null : nome,
-                      )
-                    }
-                  >
-                    <span className="conferente-nome">{nome}</span>
-                    <span className="conferente-badge">{qtd}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="sem-dados">Nenhum conferente encontrado.</p>
-            )}
-          </div>
-        </div>
+                <div className="resumo-card total">
+                  <span className="resumo-valor">{carregamentos.length}</span>
+                  <span className="resumo-label">Total Finalizados</span>
+                </div>
 
-        {/* Tabela de carregamentos */}
-        <div className="section">
-          <h2 className="section-title">
-            <FontAwesomeIcon icon={faClock} />
-            Carregamentos Finalizados
-            <span className="section-count">
-              ({carregamentosFiltrados.length})
-            </span>
-          </h2>
+                {conferenteSelecionado && (
+                  <div className="resumo-card filtrado">
+                    <span className="resumo-valor">
+                      {carregamentosFiltrados.length}
+                    </span>
+                    <span className="resumo-label">
+                      De {conferenteSelecionado}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-          {loading ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <span>Carregando...</span>
+              {/* Lista de conferentes */}
+              <div className="conferentes-section">
+                <h2 className="section-title">
+                  <FontAwesomeIcon icon={faUser} />
+                  Caminhões por Conferente
+                </h2>
+
+                {conferentesContagem.length > 0 ? (
+                  <ul className="conferentes-lista">
+                    {conferentesContagem.map(([nome, qtd]) => (
+                      <li
+                        key={nome}
+                        className={`conferente-item ${
+                          conferenteSelecionado === nome ? "ativo" : ""
+                        }`}
+                        onClick={() =>
+                          setConferenteSelecionado(
+                            conferenteSelecionado === nome ? null : nome,
+                          )
+                        }
+                      >
+                        <span className="conferente-nome">{nome}</span>
+                        <span className="conferente-badge">{qtd}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="sem-dados">Nenhum conferente encontrado.</p>
+                )}
+              </div>
             </div>
-          ) : carregamentosFiltrados.length > 0 ? (
-            <div className="table-wrapper">
-              <table className="consulta-table">
-                <thead>
-                  <tr>
-                    <th>Placa</th>
-                    <th>Modelo</th>
-                    <th>Conferente</th>
-                    <th>Equipe</th>
-                    <th>Início</th>
-                    <th>Fim</th>
-                    <th>Tempo</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {carregamentosFiltrados.map((c) => (
-                    <tr key={c._id || c.idPlaca}>
-                      <td className="td-placa" data-label="Placa">
-                        {c.placa}
-                      </td>
-                      <td data-label="Modelo">{c.modelo}</td>
-                      <td data-label="Conferente">{c.conferente}</td>
-                      <td data-label="Equipe">{c.equipe}</td>
-                      <td data-label="Início">
-                        {c.horaInicio
-                          ? new Date(c.horaInicio).toLocaleTimeString("pt-BR")
-                          : "-"}
-                      </td>
-                      <td data-label="Fim">
-                        {c.horaFim
-                          ? new Date(c.horaFim).toLocaleTimeString("pt-BR")
-                          : "-"}
-                      </td>
-                      <td className="td-tempo" data-label="Tempo">
-                        {c.tempo || "00:00:00"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+
+            {/* Tabela de carregamentos */}
+            <div className="section">
+              <h2 className="section-title">
+                <FontAwesomeIcon icon={faClock} />
+                Carregamentos Finalizados
+                <span className="section-count">
+                  ({carregamentosFiltrados.length})
+                </span>
+              </h2>
+
+              {loading ? (
+                <div className="loading-state">
+                  <div className="spinner"></div>
+                  <span>Carregando...</span>
+                </div>
+              ) : carregamentosFiltrados.length > 0 ? (
+                <div className="table-wrapper">
+                  <table className="consulta-table">
+                    <thead>
+                      <tr>
+                        <th>Placa</th>
+                        <th>Modelo</th>
+                        <th>Conferente</th>
+                        <th>Equipe</th>
+                        <th>Início</th>
+                        <th>Fim</th>
+                        <th>Início (C-Plus)</th>
+                        <th>Fim (C-Plus)</th>
+                        <th>Tempo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {carregamentosFiltrados.map((c) => (
+                        <tr key={c._id || c.idPlaca}>
+                          <td className="td-placa" data-label="Placa">
+                            {c.placa}
+                          </td>
+                          <td data-label="Modelo">{c.modelo}</td>
+                          <td data-label="Conferente">{c.conferente}</td>
+                          <td data-label="Equipe">{c.equipe}</td>
+                          <td data-label="Início">
+                            {c.horaInicio
+                              ? new Date(c.horaInicio).toLocaleTimeString(
+                                  "pt-BR",
+                                )
+                              : "-"}
+                          </td>
+                          <td data-label="Fim">
+                            {c.horaFim
+                              ? new Date(c.horaFim).toLocaleTimeString("pt-BR")
+                              : "-"}
+                          </td>
+                          <td
+                            data-label="Início (C-Plus)"
+                            className={`td-cplus ${!cplusConectado ? "td-cplus-error" : ""}`}
+                          >
+                            {!cplusConectado
+                              ? "⚠️"
+                              : c.cplusInicio
+                                ? new Date(c.cplusInicio).toLocaleTimeString(
+                                    "pt-BR",
+                                  )
+                                : "-"}
+                          </td>
+                          <td
+                            data-label="Fim (C-Plus)"
+                            className={`td-cplus ${!cplusConectado ? "td-cplus-error" : ""}`}
+                          >
+                            {!cplusConectado
+                              ? "⚠️"
+                              : c.cplusFim
+                                ? new Date(c.cplusFim).toLocaleTimeString(
+                                    "pt-BR",
+                                  )
+                                : "-"}
+                          </td>
+                          <td className="td-tempo" data-label="Tempo">
+                            {c.tempo || "00:00:00"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <FontAwesomeIcon icon={faTruck} className="empty-icon" />
+                  <p>Nenhum carregamento finalizado encontrado.</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="empty-state">
-              <FontAwesomeIcon icon={faTruck} className="empty-icon" />
-              <p>Nenhum carregamento finalizado encontrado.</p>
-            </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

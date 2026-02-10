@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { DateTime } = require("luxon");
 const Carregamento = require("../models/carregamento");
+const { queryCP, getCplusStatus } = require("../config/db");
 
 /**
  * GET /carregamentos
@@ -37,6 +38,7 @@ router.get("/", async (req, res) => {
 /**
  * GET /carregamentos/finalizados
  * Obtém carregamentos finalizados filtrados por data
+ * Inclui dados do CPlus (datainiciocarregamento e datafinalizacaocarregamento)
  */
 router.get("/finalizados", async (req, res) => {
   try {
@@ -46,8 +48,91 @@ router.get("/finalizados", async (req, res) => {
       return res.status(400).json({ erro: "Parâmetro data é obrigatório" });
     }
 
+    console.log(`\n🔍 [FINALIZADOS] Buscando data: ${data}`);
+
+    // 1. Buscar carregamentos finalizados do MongoDB
     const registros = await Carregamento.find({ data, status: "Finalizado" });
-    res.json(registros);
+    console.log(`   MongoDB: ${registros.length} carregamentos finalizados`);
+
+    // 2. Buscar dados do CPlus para a data especificada
+    let dadosCPlus = [];
+    try {
+      console.log(`   Consultando CPlus...`);
+
+      // Buscar por datainiciocarregamento (data que o carregamento começou)
+      // pois o MongoDB salva a data de início, não a data prevista de saída
+      const queryCPlus = `
+        SELECT 
+          v.placa,
+          r.datainiciocarregamento,
+          r.datafinalizacaocarregamento,
+          r.datadocadastro
+        FROM dbo.romaneiodeentrega as r
+        JOIN dbo.veiculo as v ON r.idveiculo = v.id
+        WHERE DATE(r.datainiciocarregamento) = $1
+      `;
+
+      dadosCPlus = await queryCP(queryCPlus, [data]);
+      console.log(`   📊 CPlus: Encontrados ${dadosCPlus.length} registros`);
+    } catch (error) {
+      console.error("   ⚠️ Erro ao buscar dados do CPlus:", error.message);
+      // Continua sem os dados do CPlus se houver erro
+    }
+
+    // 3. Fazer o merge dos dados por placa e proximidade de horário
+    const registrosComCPlus = registros.map((reg) => {
+      const registroObj = reg.toObject();
+
+      // Normalizar placa do MongoDB (remover espaços e hífens)
+      const placaNormalizada = reg.placa.replace(/[\s-]/g, "").toUpperCase();
+
+      // Buscar correspondência no CPlus pela placa (normalizada)
+      const matchesCPlus = dadosCPlus.filter((cp) => {
+        if (!cp.placa) return false;
+        const placaCPlusNormalizada = cp.placa
+          .replace(/[\s-]/g, "")
+          .toUpperCase();
+        return placaCPlusNormalizada === placaNormalizada;
+      });
+
+      if (matchesCPlus.length > 0) {
+        // Se houver múltiplos matches, pegar o mais próximo do horário de início
+        let melhorMatch = matchesCPlus[0];
+
+        if (matchesCPlus.length > 1 && reg.horaInicio) {
+          const horaInicioMongo = new Date(reg.horaInicio);
+
+          melhorMatch = matchesCPlus.reduce((prev, curr) => {
+            if (!curr.datainiciocarregamento) return prev;
+            if (!prev.datainiciocarregamento) return curr;
+
+            const diffCurr = Math.abs(
+              new Date(curr.datainiciocarregamento) - horaInicioMongo,
+            );
+            const diffPrev = Math.abs(
+              new Date(prev.datainiciocarregamento) - horaInicioMongo,
+            );
+
+            return diffCurr < diffPrev ? curr : prev;
+          });
+        }
+
+        // Adicionar dados do CPlus ao registro
+        registroObj.cplusInicio = melhorMatch.datainiciocarregamento || null;
+        registroObj.cplusFim = melhorMatch.datafinalizacaocarregamento || null;
+      } else {
+        registroObj.cplusInicio = null;
+        registroObj.cplusFim = null;
+      }
+
+      return registroObj;
+    });
+
+    // Retornar dados com status da conexão CPlus
+    res.json({
+      dados: registrosComCPlus,
+      cplusConectado: dadosCPlus.length > 0 || getCplusStatus(),
+    });
   } catch (error) {
     console.error("Erro ao buscar finalizados:", error);
     res.status(500).json({ erro: "Erro ao buscar finalizados" });
