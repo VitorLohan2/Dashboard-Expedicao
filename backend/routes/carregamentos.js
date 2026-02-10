@@ -118,8 +118,25 @@ router.get("/finalizados", async (req, res) => {
         }
 
         // Adicionar dados do CPlus ao registro
-        registroObj.cplusInicio = melhorMatch.datainiciocarregamento || null;
-        registroObj.cplusFim = melhorMatch.datafinalizacaocarregamento || null;
+        // Enviar horários formatados como string para evitar problemas de timezone
+        const formatarHoraCPlus = (timestamp) => {
+          if (!timestamp) return null;
+          // O timestamp vem do PostgreSQL. Verificar se é Date ou string
+          const date =
+            timestamp instanceof Date ? timestamp : new Date(timestamp);
+          // Usar getHours (hora local do servidor) pois o PostgreSQL armazena em hora local
+          const horas = String(date.getHours()).padStart(2, "0");
+          const minutos = String(date.getMinutes()).padStart(2, "0");
+          const segundos = String(date.getSeconds()).padStart(2, "0");
+          return `${horas}:${minutos}:${segundos}`;
+        };
+
+        registroObj.cplusInicio = formatarHoraCPlus(
+          melhorMatch.datainiciocarregamento,
+        );
+        registroObj.cplusFim = formatarHoraCPlus(
+          melhorMatch.datafinalizacaocarregamento,
+        );
       } else {
         registroObj.cplusInicio = null;
         registroObj.cplusFim = null;

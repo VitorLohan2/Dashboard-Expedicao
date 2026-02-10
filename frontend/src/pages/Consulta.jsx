@@ -158,8 +158,8 @@ const Consulta = () => {
       c.equipe || "-",
       c.horaInicio ? new Date(c.horaInicio).toLocaleTimeString("pt-BR") : "-",
       c.horaFim ? new Date(c.horaFim).toLocaleTimeString("pt-BR") : "-",
-      c.cplusInicio ? new Date(c.cplusInicio).toLocaleTimeString("pt-BR") : "-",
-      c.cplusFim ? new Date(c.cplusFim).toLocaleTimeString("pt-BR") : "-",
+      c.cplusInicio || "-",
+      c.cplusFim || "-",
       c.tempo || "00:00:00",
     ]);
 
@@ -440,25 +440,13 @@ const Consulta = () => {
                             data-label="Início (C-Plus)"
                             className={`td-cplus ${!cplusConectado ? "td-cplus-error" : ""}`}
                           >
-                            {!cplusConectado
-                              ? "⚠️"
-                              : c.cplusInicio
-                                ? new Date(c.cplusInicio).toLocaleTimeString(
-                                    "pt-BR",
-                                  )
-                                : "-"}
+                            {!cplusConectado ? "⚠️" : c.cplusInicio || "-"}
                           </td>
                           <td
                             data-label="Fim (C-Plus)"
                             className={`td-cplus ${!cplusConectado ? "td-cplus-error" : ""}`}
                           >
-                            {!cplusConectado
-                              ? "⚠️"
-                              : c.cplusFim
-                                ? new Date(c.cplusFim).toLocaleTimeString(
-                                    "pt-BR",
-                                  )
-                                : "-"}
+                            {!cplusConectado ? "⚠️" : c.cplusFim || "-"}
                           </td>
                           <td className="td-tempo" data-label="Tempo">
                             {c.tempo || "00:00:00"}
