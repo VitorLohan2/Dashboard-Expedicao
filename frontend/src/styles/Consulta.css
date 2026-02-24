@@ -318,7 +318,6 @@
 }
 
 .td-cplus {
-  font-family: "Roboto Mono", monospace;
   color: var(--success-600);
   background-color: var(--success-50);
   font-weight: var(--font-medium);
