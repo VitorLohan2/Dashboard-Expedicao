@@ -6,10 +6,7 @@
 
 services:
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: dashboard-expedicao-backend:latest
+    image: vitorlohan/expedicao-backend:${IMAGE_TAG:-latest}
     container_name: expedicao_backend
     hostname: expedicao-backend
     ports:
