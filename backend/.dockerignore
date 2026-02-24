@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+.git
+.gitignore
+README.md
+GUIA_CPLUS.md
+*.md
+seed.js
+criarUsuario.js
+deletarPlacas.js
+limparDados.js
+migrarCamposPausa.js

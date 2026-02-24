@@ -1,0 +1,34 @@
+# ============================================
+# Docker Compose - Dashboard Expedição
+# Separado do sistema visitante
+# ============================================
+# Colocar este arquivo na VM em: ~/expedicao/
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dashboard-expedicao-backend:latest
+    container_name: expedicao_backend
+    hostname: expedicao-backend
+    ports:
+      - "3501:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb+srv://vitor:32096321@clustercarregamento.to7zl3e.mongodb.net/carregamentos_db?retryWrites=true&w=majority&appName=ClusterCarregamento
+      - DATABASE_URL_CPLUS=postgresql://consulta:vvs%402025%40@186.232.43.142:2407/CPlus5?schema=dbo
+    restart: always
+    networks:
+      - expedicao-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  expedicao-network:
+    driver: bridge
