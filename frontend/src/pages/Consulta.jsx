@@ -1,12 +1,12 @@
 // src/pages/Consulta.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 
 // Components
 import Header from "../components/Header";
 import StatusMessage from "../components/StatusMessage";
+import { gerarPDF } from "../components/pdf";
+import { gerarExcel } from "../components/excel";
 
 // Services
 import api from "../services/api";
@@ -19,6 +19,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
   faFilePdf,
+  faFileExcel,
   faSearch,
   faTruck,
   faUser,
@@ -127,98 +128,43 @@ const Consulta = () => {
     return resultado;
   }, [carregamentos, conferenteSelecionado, searchTerm]);
 
-  // Gerar PDF
-  const gerarPDF = () => {
+  const handleExportarPDF = () => {
     if (carregamentosFiltrados.length === 0) {
       showMessage("warning", "Não há dados para gerar o PDF.");
       return;
     }
 
-    const doc = new jsPDF();
-    const dataFormatada = dataSelecionada.split("-").reverse().join("/");
-
-    // Título
-    doc.setFontSize(18);
-    doc.setTextColor(30, 58, 138);
-    doc.text("Relatório de Carregamentos", 14, 20);
-
-    // Subtítulo
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    const subtitulo = conferenteSelecionado
-      ? `Data: ${dataFormatada} | Conferente: ${conferenteSelecionado}`
-      : `Data: ${dataFormatada}`;
-    doc.text(subtitulo, 14, 28);
-
-    // Tabela
-    const dados = carregamentosFiltrados.map((c) => [
-      c.placa || "-",
-      c.modelo || "-",
-      c.conferente || "-",
-      c.equipe || "-",
-      c.horaInicio ? new Date(c.horaInicio).toLocaleTimeString("pt-BR") : "-",
-      c.horaFim ? new Date(c.horaFim).toLocaleTimeString("pt-BR") : "-",
-      c.cplusInicio || "-",
-      c.cplusFim || "-",
-      c.tempo || "00:00:00",
-    ]);
-
-    autoTable(doc, {
-      head: [
-        [
-          "Placa",
-          "Modelo",
-          "Conferente",
-          "Equipe",
-          "Início",
-          "Fim",
-          "Início (C-Plus)",
-          "Fim (C-Plus)",
-          "Tempo",
-        ],
-      ],
-      body: dados,
-      startY: 35,
-      theme: "striped",
-      styles: {
-        fontSize: 8,
-      },
-      headStyles: {
-        fillColor: [30, 58, 138],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-      },
-      alternateRowStyles: {
-        fillColor: [245, 247, 250],
-      },
+    gerarPDF({
+      carregamentos: carregamentosFiltrados,
+      conferentesContagem,
+      dataSelecionada,
+      conferenteSelecionado,
     });
-
-    // Rodapé com contagem por conferente
-    const finalY = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(12);
-    doc.setTextColor(30, 58, 138);
-    doc.text("Resumo por Conferente:", 14, finalY);
-
-    let yPosition = finalY + 8;
-    doc.setFontSize(10);
-    doc.setTextColor(60);
-
-    conferentesContagem.forEach(([nome, qtd]) => {
-      if (yPosition > 280) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      doc.text(`• ${nome}: ${qtd} caminhão(ões)`, 14, yPosition);
-      yPosition += 6;
-    });
-
-    // Salvar
-    const nomeArquivo = conferenteSelecionado
-      ? `carregamentos_${dataSelecionada}_${conferenteSelecionado}.pdf`
-      : `carregamentos_${dataSelecionada}.pdf`;
-    doc.save(nomeArquivo);
 
     showMessage("success", "PDF gerado com sucesso!");
+  };
+
+  // Extrai YYYY-MM da data selecionada e busca o mês inteiro no backend
+  const handleExportarExcel = async () => {
+    const mes = dataSelecionada.slice(0, 7); // "YYYY-MM-DD" → "YYYY-MM"
+    setLoading(true);
+    try {
+      const res = await api.get(`/carregamentos/finalizados/mes?mes=${mes}`);
+      const dadosMes = res.data;
+
+      if (!dadosMes || dadosMes.length === 0) {
+        showMessage("warning", "Nenhum carregamento encontrado no mês.");
+        return;
+      }
+
+      gerarExcel({ carregamentos: dadosMes, mes });
+      showMessage("success", `Excel do mês ${mes} gerado com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao buscar dados do mês:", error);
+      showMessage("error", "Erro ao buscar dados do mês para o Excel.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Limpar filtro de conferente
@@ -269,7 +215,14 @@ const Consulta = () => {
                 </p>
               </div>
               <div className="consulta-header-right">
-                <button className="btn btn-primary" onClick={gerarPDF}>
+                <button
+                  className="btn btn-success"
+                  onClick={handleExportarExcel}
+                >
+                  <FontAwesomeIcon icon={faFileExcel} />
+                  <span>Exportar Excel</span>
+                </button>
+                <button className="btn btn-primary" onClick={handleExportarPDF}>
                   <FontAwesomeIcon icon={faFilePdf} />
                   <span>Exportar PDF</span>
                 </button>
@@ -428,12 +381,20 @@ const Consulta = () => {
                             {c.horaInicio
                               ? new Date(c.horaInicio).toLocaleTimeString(
                                   "pt-BR",
+                                  {
+                                    timeZone: "America/Sao_Paulo",
+                                  },
                                 )
                               : "-"}
                           </td>
                           <td data-label="Fim">
                             {c.horaFim
-                              ? new Date(c.horaFim).toLocaleTimeString("pt-BR")
+                              ? new Date(c.horaFim).toLocaleTimeString(
+                                  "pt-BR",
+                                  {
+                                    timeZone: "America/Sao_Paulo",
+                                  },
+                                )
                               : "-"}
                           </td>
                           <td

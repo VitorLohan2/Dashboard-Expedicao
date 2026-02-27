@@ -1,23 +1,29 @@
 // backend/server/index.js
-const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const { testCplusConnection, getCplusStatus } = require("../config/db");
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
 
-// Routes
-const carregamentoRoutes = require("../routes/carregamentos");
-const informacoesGeraisRoutes = require("../routes/informacoesGerais");
-const cplusRoutes = require("../routes/cplus");
+import { testCplusConnection, getCplusStatus } from "../config/db.js";
+
+import carregamentoRoutes from "../routes/carregamentos.js";
+import informacoesGeraisRoutes from "../routes/informacoesGerais.js";
+import cplusRoutes from "../routes/cplus.js";
+
+// Corrigir __dirname no ES Module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Status das conexões
 let mongoConectado = false;
 
-// Database connection
+// MongoDB
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
@@ -29,7 +35,7 @@ mongoose
     mongoConectado = false;
   });
 
-// Testar conexão CPlus na inicialização
+// CPlus
 testCplusConnection().then((conectado) => {
   if (conectado) {
     console.log("✅ Conectado ao CPlus (PostgreSQL)");
@@ -47,12 +53,10 @@ app.use("/carregamentos", carregamentoRoutes);
 app.use("/informacoes-gerais", informacoesGeraisRoutes);
 app.use("/cplus", cplusRoutes);
 
-// Health check simples
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Status completo das conexões (para o frontend)
 app.get("/status", (req, res) => {
   res.json({
     status: "online",
@@ -64,7 +68,6 @@ app.get("/status", (req, res) => {
   });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
 });

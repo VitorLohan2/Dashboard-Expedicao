@@ -275,6 +275,12 @@
   margin-left: var(--spacing-xs);
 }
 
+.consulta-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 /* Tabela */
 .table-wrapper {
   overflow-x: visible;

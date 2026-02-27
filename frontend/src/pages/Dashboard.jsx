@@ -490,6 +490,13 @@ const Dashboard = () => {
               <FontAwesomeIcon icon={faPlus} />
               <span>Gerenciar Placas</span>
             </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate("/grafico")}
+            >
+              <FontAwesomeIcon icon={faPlus} />
+              <span>Gráfico</span>
+            </button>
           </div>
         </div>
 

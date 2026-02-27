@@ -1,66 +1,13 @@
 // backend/routes/informacoesGerais.js
-const express = require("express");
-const router = express.Router();
-const InformacoesGerais = require("../models/informacoesGerais");
+import { Router } from "express";
+import {
+  getInformacoesGerais,
+  updateInformacoesGerais,
+} from "../controllers/informacoesGeraisController.js";
 
-/**
- * PUT /informacoes-gerais/:data
- * Registra ou atualiza informações gerais por data
- */
-router.put("/:data", async (req, res) => {
-  const { data } = req.params;
-  const novosDados = req.body;
+const router = Router();
 
-  try {
-    const existentes = await InformacoesGerais.findOne({ data });
+router.get("/:data", getInformacoesGerais);
+router.put("/:data", updateInformacoesGerais);
 
-    const dadosAtualizados = {
-      totalPedidos: novosDados.totalPedidos ?? existentes?.totalPedidos ?? "",
-      confZonas: novosDados.confZonas ?? existentes?.confZonas ?? "",
-      zonaum: novosDados.zonaum ?? existentes?.zonaum ?? "",
-      carregmanha: novosDados.carregmanha ?? existentes?.carregmanha ?? "",
-      data,
-    };
-
-    const atualizado = await InformacoesGerais.findOneAndUpdate(
-      { data },
-      dadosAtualizados,
-      { upsert: true, new: true },
-    );
-
-    res.json(atualizado);
-  } catch (error) {
-    console.error("Erro ao salvar informações gerais:", error);
-    res.status(500).json({ erro: "Erro ao salvar informações" });
-  }
-});
-
-/**
- * GET /informacoes-gerais/:data
- * Obtém informações gerais por data
- */
-router.get("/:data", async (req, res) => {
-  const { data } = req.params;
-
-  try {
-    const info = await InformacoesGerais.findOne({ data });
-
-    if (!info) {
-      // Retorna objeto vazio em vez de 404 para evitar erros no console
-      return res.json({
-        data,
-        totalPedidos: "",
-        confZonas: "",
-        zonaum: "",
-        carregmanha: "",
-      });
-    }
-
-    res.json(info);
-  } catch (error) {
-    console.error("Erro ao buscar informações gerais:", error);
-    res.status(500).json({ erro: "Erro ao buscar informações" });
-  }
-});
-
-module.exports = router;
+export default router;

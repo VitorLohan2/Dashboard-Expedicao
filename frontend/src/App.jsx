@@ -11,6 +11,7 @@ import {
 import Dashboard from "./pages/Dashboard";
 import Consulta from "./pages/Consulta";
 import Placas from "./pages/Placas";
+import Grafico from "./pages/Grafico";
 
 // Styles
 import "./styles/variables.css";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/consulta" element={<Consulta />} />
         <Route path="/placas" element={<Placas />} />
+        <Route path="/grafico" element={<Grafico />} />
       </Routes>
     </Router>
   );

@@ -1,5 +1,6 @@
 // config/db.js
-const { Pool } = require("pg");
+import pkg from "pg";
+const { Pool } = pkg;
 
 // Conexão com CPlus (PostgreSQL) - dotenv já carregado no index.js
 let cplusPool = null;
@@ -78,9 +79,4 @@ const testCplusConnection = async () => {
   }
 };
 
-module.exports = {
-  queryCP,
-  queryOneCP,
-  getCplusStatus,
-  testCplusConnection,
-};
+export { queryCP, queryOneCP, getCplusStatus, testCplusConnection };

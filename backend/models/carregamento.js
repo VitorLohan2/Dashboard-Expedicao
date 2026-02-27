@@ -1,5 +1,5 @@
 // backend/models/carregamento.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const carregamentoSchema = new mongoose.Schema(
   {
@@ -64,4 +64,6 @@ const carregamentoSchema = new mongoose.Schema(
 
 carregamentoSchema.index({ idPlaca: 1, data: 1 }, { unique: true }); // placa única por data
 
-module.exports = mongoose.model("Carregamento", carregamentoSchema);
+const Carregamento = mongoose.model("Carregamento", carregamentoSchema);
+
+export default Carregamento;
