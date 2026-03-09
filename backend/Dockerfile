@@ -24,6 +24,7 @@ RUN npm install --production
 
 # Copia todo o código do builder
 COPY --from=builder /app/config ./config
+COPY --from=builder /app/controllers ./controllers
 COPY --from=builder /app/models ./models
 COPY --from=builder /app/routes ./routes
 COPY --from=builder /app/server ./server

@@ -68,6 +68,39 @@ const PLACAS_PADRAO = [
   { idPlaca: "41", placa: "KRU 8I95", modelo: "1016", codigoBarra: "KRU8I95" },
   { idPlaca: "42", placa: "TTL 1E06", modelo: "1016", codigoBarra: "TTL1E06" },
   { idPlaca: "43", placa: "PATRUS", modelo: "PATRUS", codigoBarra: "PATRUS" },
+  { idPlaca: "44", placa: "LDB", modelo: "LDB", codigoBarra: "LDB" },
+  {
+    idPlaca: "45",
+    placa: "PAJUCARA",
+    modelo: "PAJUCARA",
+    codigoBarra: "PAJUCARA",
+  },
+  {
+    idPlaca: "46",
+    placa: "VELOCARGAS",
+    modelo: "VELOCARGAS",
+    codigoBarra: "VELOCARGAS",
+  },
+  {
+    idPlaca: "47",
+    placa: "MODULAR",
+    modelo: "MODULAR",
+    codigoBarra: "MODULAR",
+  },
+  { idPlaca: "48", placa: "HJT", modelo: "HJT", codigoBarra: "HJT" },
+  { idPlaca: "49", placa: "MOOVE", modelo: "MOOVE", codigoBarra: "MOOVE" },
+  {
+    idPlaca: "50",
+    placa: "SECULUM",
+    modelo: "SECULUM",
+    codigoBarra: "SECULUM",
+  },
+  {
+    idPlaca: "51",
+    placa: "BRASPRESS",
+    modelo: "BRASPRESS",
+    codigoBarra: "BRASPRESS",
+  },
 ];
 
 const Placas = () => {
